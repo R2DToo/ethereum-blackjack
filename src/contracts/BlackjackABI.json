@@ -1,0 +1,386 @@
+{
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ChainlinkCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ChainlinkFulfilled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ChainlinkRequested",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "admin",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "checker",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentGameId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_volume",
+          "type": "bytes32"
+        }
+      ],
+      "name": "fulfillDealerHit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_volume",
+          "type": "bytes32"
+        }
+      ],
+      "name": "fulfillDrawDealerCard",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_volume",
+          "type": "bytes32"
+        }
+      ],
+      "name": "fulfillDrawPlayerCard",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_volume",
+          "type": "bytes32"
+        }
+      ],
+      "name": "fulfillPlayerHit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_volume",
+          "type": "bytes32"
+        }
+      ],
+      "name": "fulfillShuffleNewDeck",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "games",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "deck_id",
+          "type": "string"
+        },
+        {
+          "internalType": "address payable",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "oracle_req_id",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint8",
+          "name": "playerCardCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "dealerCardCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum Blackjack.Player",
+          "name": "whos_turn",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum Blackjack.Winner",
+          "name": "winner",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "gameIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "cardIndex",
+          "type": "uint8"
+        }
+      ],
+      "name": "getDealerCards",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct Blackjack.Card",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "gameIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "cardIndex",
+          "type": "uint8"
+        }
+      ],
+      "name": "getPlayerCards",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct Blackjack.Card",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "gameIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum Blackjack.Player",
+          "name": "player",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTotalHandValue",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastGameId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "newGame",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "gameIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "playerHit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "gameIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "playerStand",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "gameIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "playerSurrender",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}
