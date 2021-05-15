@@ -45,6 +45,184 @@
       "type": "event"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "game_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum Blackjack.Winner",
+          "name": "winner",
+          "type": "uint8"
+        }
+      ],
+      "name": "GameWon",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "game_id",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct Blackjack.Card",
+          "name": "dealer_card",
+          "type": "tuple"
+        }
+      ],
+      "name": "NewDealerCardDealt",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "game_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "deck_id",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct Blackjack.Card",
+          "name": "player_card_1",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct Blackjack.Card",
+          "name": "player_card_2",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct Blackjack.Card",
+          "name": "dealer_card_1",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct Blackjack.Card",
+          "name": "dealer_card_2",
+          "type": "tuple"
+        }
+      ],
+      "name": "NewGameDealt",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "game_id",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "value",
+              "type": "uint8"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct Blackjack.Card",
+          "name": "player_card",
+          "type": "tuple"
+        }
+      ],
+      "name": "NewPlayerCardDealt",
+      "type": "event"
+    },
+    {
       "inputs": [],
       "name": "admin",
       "outputs": [
@@ -52,19 +230,6 @@
           "internalType": "address payable",
           "name": "",
           "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "checker",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
         }
       ],
       "stateMutability": "view",
@@ -221,102 +386,6 @@
         {
           "internalType": "enum Blackjack.Winner",
           "name": "winner",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "gameIndex",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "cardIndex",
-          "type": "uint8"
-        }
-      ],
-      "name": "getDealerCards",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "code",
-              "type": "string"
-            },
-            {
-              "internalType": "uint8",
-              "name": "value",
-              "type": "uint8"
-            }
-          ],
-          "internalType": "struct Blackjack.Card",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "gameIndex",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "cardIndex",
-          "type": "uint8"
-        }
-      ],
-      "name": "getPlayerCards",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "code",
-              "type": "string"
-            },
-            {
-              "internalType": "uint8",
-              "name": "value",
-              "type": "uint8"
-            }
-          ],
-          "internalType": "struct Blackjack.Card",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "gameIndex",
-          "type": "uint256"
-        },
-        {
-          "internalType": "enum Blackjack.Player",
-          "name": "player",
-          "type": "uint8"
-        }
-      ],
-      "name": "getTotalHandValue",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
           "type": "uint8"
         }
       ],
