@@ -49,9 +49,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "game_id",
-          "type": "uint256"
+          "type": "uint128"
         },
         {
           "indexed": false,
@@ -68,9 +68,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "game_id",
-          "type": "uint256"
+          "type": "uint128"
         },
         {
           "components": [
@@ -99,15 +99,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "game_id",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "deck_id",
-          "type": "string"
+          "type": "uint128"
         },
         {
           "indexed": true,
@@ -196,9 +190,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "game_id",
-          "type": "uint256"
+          "type": "uint128"
         },
         {
           "components": [
@@ -223,32 +217,6 @@
       "type": "event"
     },
     {
-      "inputs": [],
-      "name": "admin",
-      "outputs": [
-        {
-          "internalType": "address payable",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "currentGameId",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "bytes32",
@@ -261,7 +229,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "fulfillDealerHit",
+      "name": "dealerHitResponse",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -279,7 +247,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "fulfillDrawDealerCard",
+      "name": "drawDealerCardResponse",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -297,43 +265,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "fulfillDrawPlayerCard",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "_requestId",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "_volume",
-          "type": "bytes32"
-        }
-      ],
-      "name": "fulfillPlayerHit",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "_requestId",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "_volume",
-          "type": "bytes32"
-        }
-      ],
-      "name": "fulfillShuffleNewDeck",
+      "name": "drawPlayerCardResponse",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -349,9 +281,9 @@
       "name": "games",
       "outputs": [
         {
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "id",
-          "type": "uint256"
+          "type": "uint128"
         },
         {
           "internalType": "string",
@@ -394,19 +326,6 @@
     },
     {
       "inputs": [],
-      "name": "lastGameId",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "newGame",
       "outputs": [],
       "stateMutability": "nonpayable",
@@ -415,12 +334,12 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "gameIndex",
-          "type": "uint256"
+          "type": "uint128"
         }
       ],
-      "name": "playerHit",
+      "name": "playerHitRequest",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -428,9 +347,27 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
+          "internalType": "bytes32",
+          "name": "_requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_volume",
+          "type": "bytes32"
+        }
+      ],
+      "name": "playerHitResponse",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint128",
           "name": "gameIndex",
-          "type": "uint256"
+          "type": "uint128"
         }
       ],
       "name": "playerStand",
@@ -441,12 +378,30 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "gameIndex",
-          "type": "uint256"
+          "type": "uint128"
         }
       ],
       "name": "playerSurrender",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_volume",
+          "type": "bytes32"
+        }
+      ],
+      "name": "shuffleNewDeckResponse",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
