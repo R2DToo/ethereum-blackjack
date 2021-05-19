@@ -1,6 +1,6 @@
 import customCardBacking from './customCardBacking.png';
 
-const Main = ({newGame, playerHit, playerStand, resetGame, game, buttons, winner}) => {
+const Main = ({newGame, playerHit, playerStand, playerSurrender, resetGame, game, buttons, winner}) => {
   return (
     <>
       <div className="card mx-auto m-3" style={{width: "90%"}}>
@@ -9,7 +9,7 @@ const Main = ({newGame, playerHit, playerStand, resetGame, game, buttons, winner
             <div id="dealer_hand">
               {game.dealer_cards.map((value, index) => {
                 let src = "";
-                if (game.dealer_cards.length === 2) {
+                if (game.dealer_cards.length === 2 && !winner.chosen) {
                   if (index === 1) {
                     src=customCardBacking
                   } else {
@@ -60,7 +60,15 @@ const Main = ({newGame, playerHit, playerStand, resetGame, game, buttons, winner
           </button>}
           {buttons.double && <button type="button" className="btn btn-primary mx-1">Double</button>}
           {buttons.split && <button type="button" className="btn btn-primary mx-1">Split</button>}
-          {buttons.surrender && <button type="button" className="btn btn-primary mx-1">Surrender</button>}
+          {buttons.surrender && <button
+            type="button"
+            className="btn btn-primary mx-1"
+            onClick={() => {
+              playerSurrender();
+            }}
+          >
+            Surrender
+          </button>}
           {buttons.reset && <button
             type="button"
             className="btn btn-primary mx-1"

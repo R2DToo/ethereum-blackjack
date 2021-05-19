@@ -36,13 +36,9 @@ contract Blackjack is ChainlinkClient {
 
     enum Winner { Dealer, Player, Tie, Unknown }
 
-    event NewGameDealt (
+    event NewGame (
         uint128 indexed game_id,
-        address indexed player,
-        Card player_card_1,
-        Card player_card_2,
-        Card dealer_card_1,
-        Card dealer_card_2
+        address indexed player
     );
 
     event NewPlayerCardDealt (
@@ -75,6 +71,8 @@ contract Blackjack is ChainlinkClient {
         _newGame.whos_turn = Player.Player;
         _newGame.winner = Winner.Unknown;
         _newGame.oracle_req_id = shuffleNewDeckRequest();
+
+        emit NewGame(_newGame.id, _newGame.player);
 
         games[lastGameId] = _newGame;
     }
@@ -132,6 +130,7 @@ contract Blackjack is ChainlinkClient {
     function drawPlayerCard(uint128 gameIndex, bytes32 response) internal {
         string memory valueByte = substring(bytes32ToString(response), 0, 1);
         games[gameIndex].player_cards[games[gameIndex].playerCardCount] = Card(bytes32ToString(response), valueStringToValueUint(valueByte));
+        emit NewPlayerCardDealt(games[gameIndex].id, games[gameIndex].player_cards[games[gameIndex].playerCardCount]);
         games[gameIndex].playerCardCount = games[gameIndex].playerCardCount + 1;
         if (games[gameIndex].dealerCardCount < 2) {
             games[gameIndex].oracle_req_id = drawDealerCardRequest(gameIndex);
@@ -165,18 +164,11 @@ contract Blackjack is ChainlinkClient {
     function drawDealerCard(uint128 gameIndex, bytes32 response) internal {
         string memory valueByte = substring(bytes32ToString(response), 0, 1);
         games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount] = Card(bytes32ToString(response), valueStringToValueUint(valueByte));
+        emit NewDealerCardDealt(games[gameIndex].id, games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount]);
         games[gameIndex].dealerCardCount = games[gameIndex].dealerCardCount + 1;
         if (games[gameIndex].playerCardCount < 2) {
             games[gameIndex].oracle_req_id = drawPlayerCardRequest(gameIndex);
         } else {
-            emit NewGameDealt(
-                games[gameIndex].id,
-                games[gameIndex].player,
-                games[gameIndex].player_cards[0],
-                games[gameIndex].player_cards[1],
-                games[gameIndex].dealer_cards[0],
-                games[gameIndex].dealer_cards[1]
-            );
             checkBlackjack(gameIndex);
         }
     }

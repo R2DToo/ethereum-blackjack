@@ -108,81 +108,9 @@
           "internalType": "address",
           "name": "player",
           "type": "address"
-        },
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "code",
-              "type": "string"
-            },
-            {
-              "internalType": "uint8",
-              "name": "value",
-              "type": "uint8"
-            }
-          ],
-          "indexed": false,
-          "internalType": "struct Blackjack.Card",
-          "name": "player_card_1",
-          "type": "tuple"
-        },
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "code",
-              "type": "string"
-            },
-            {
-              "internalType": "uint8",
-              "name": "value",
-              "type": "uint8"
-            }
-          ],
-          "indexed": false,
-          "internalType": "struct Blackjack.Card",
-          "name": "player_card_2",
-          "type": "tuple"
-        },
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "code",
-              "type": "string"
-            },
-            {
-              "internalType": "uint8",
-              "name": "value",
-              "type": "uint8"
-            }
-          ],
-          "indexed": false,
-          "internalType": "struct Blackjack.Card",
-          "name": "dealer_card_1",
-          "type": "tuple"
-        },
-        {
-          "components": [
-            {
-              "internalType": "string",
-              "name": "code",
-              "type": "string"
-            },
-            {
-              "internalType": "uint8",
-              "name": "value",
-              "type": "uint8"
-            }
-          ],
-          "indexed": false,
-          "internalType": "struct Blackjack.Card",
-          "name": "dealer_card_2",
-          "type": "tuple"
         }
       ],
-      "name": "NewGameDealt",
+      "name": "NewGame",
       "type": "event"
     },
     {
