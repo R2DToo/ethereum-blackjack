@@ -15,23 +15,29 @@ const App = () => {
 
   const [game, setGame] = useState({
     id: 0,
-    deck_id: '',
     player_cards: [],
     dealer_cards: []
   });
 
   const [loading, setLoading] = useState({
     status: true,
-    message: "Starting up..."
+    message: "Starting up...",
+    percentage: 50
   });
 
   const[buttons, setButtons] = useState({
     new: true,
   });
 
+  const [winner, setWinner] = useState({
+    chosen: false,
+    name: ""
+  });
+
+  var latestBlock = 24918400;
+
   useEffect(() => {
     const mount = async () => {
-      await loadWeb3();
       await loadBlockchainData();
       setLoading(currentState => ({
         ...currentState,
@@ -41,75 +47,74 @@ const App = () => {
     mount();
   }, []);
 
-  const loadWeb3 = async () => {
-    if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum);
-      await window.ethereum.enable();
-    }
-    else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider);
-    }
-    else {
-      window.alert('Non-Ethereum browser detected. You should consider trying MetaMask!');
-    }
-  }
-
   const loadBlockchainData = async () => {
-    const web3 = window.web3;
-    const networkId = await web3.eth.net.getId();
+    if (typeof window.ethereum !== "undefined") {
+      const web3 = new Web3(window.ethereum);
+      const networkId = await web3.eth.net.getId();
+      console.log("networkId: " + networkId);
+      if(networkId!==42){
+        window.alert('Please switch network to Kovan and refresh the page');
+      }
+      const contract_abi = BlackJackABI.abi;
+      const contract_address = '0x298eA665f17C64FBfc6099D6Db7b75f2e8F78067';
 
-    if(networkId!==42){
-      window.alert('Please switch network to Kovan and refresh the page');
+      const contract = new web3.eth.Contract(contract_abi, contract_address);
+      const accounts = await web3.eth.getAccounts();
+      if (typeof accounts[0] !== "undefined") {
+        const balance = await web3.eth.getBalance(accounts[0]);
+        const maxBet = await web3.eth.getBalance(contract_address);
+        setWeb3State(currentState => ({
+          ...currentState,
+          contract: contract,
+          account: accounts[0],
+          balance: balance,
+          maxBet: maxBet
+        }));
+      } else {
+        window.alert("Please login to Metamask first");
+      }
+    } else {
+      window.alert("Metamask wallet not detected. Please install and try again");
     }
-    const contract_abi = BlackJackABI.abi;
-    const contract_address = '0xA4fB8BEBE84e056072A4143CAd36596F932A00E1';
-
-    const contract = new web3.eth.Contract(contract_abi, contract_address);
-    const accounts = await web3.eth.getAccounts();
-    const balance = await web3.eth.getBalance(accounts[0]);
-    const maxBet = await web3.eth.getBalance(contract_address);
-
-    setWeb3State(currentState => ({
-      ...currentState,
-      contract: contract,
-      account: accounts[0],
-      balance: balance,
-      maxBet: maxBet
-    }));
   }
 
   const newGame = async () => {
-    var id = await web3State.contract.methods.currentGameId().call();
-    setGame(currentGameState => ({
-      ...currentGameState,
-      id: id
+    setLoading(currentState => ({
+      ...currentState,
+      status: true,
+      message: "Shuffling a new deck...",
+      percentage: 10
     }));
 
     await web3State.contract.methods.newGame().send({
       from: web3State.account
     })
-    .on('sent', (payload) => {
-      console.log("==========sent==========");
+    .once('sent', (payload) => {
       setLoading(currentState => ({
         ...currentState,
-        status: true,
-        message: "Shuffling a new deck..."
+        percentage: currentState.percentage + 10
       }));
     })
-    .on('transactionHash', (hash) => {
-      console.log("==========transactionHash==========");
+    .once('transactionHash', (hash) => {
       console.log(`https://kovan.etherscan.io/tx/${hash}`);
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 10
+      }));
     })
-    .on('receipt', (receipt) => {
-      console.log("==========receipt==========");
-      console.log(receipt);
+    .once('receipt', (receipt) => {
+      latestBlock = receipt.blockNumber;
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 10
+      }));
     })
-    .on('confirmation', async (confirmation, receipt, latestHash) => {
-      if (confirmation < 1) {
-        console.log("==========confirmation==========");
-        console.log(confirmation);
-
-      }
+    .once('confirmation', async (confirmation, receipt, latestHash) => {
+      setLoading(currentState => ({
+        ...currentState,
+        message: "Drawing cards for you and the dealer...",
+        percentage: currentState.percentage + 20
+      }));
     })
     .on('error', (error) => {
       console.log("==========error==========");
@@ -120,17 +125,15 @@ const App = () => {
       }));
     });
 
-    console.log("game_id: " + game.id + " - var_id: " + id);
-    await web3State.contract.events.NewGameDealt({filter: {game_id: id}})
-    .on('data', (event) => {
-      console.log("newGameDealt, game id: " + game.id + " - var id: " + id);
-      console.log(event.returnValues);
-      if (event.returnValues.game_id === id) {
-        console.log("passed if");
-        console.log(event.returnValues);
+    var id = 0;
+    await web3State.contract.events.NewGameDealt({filter: {player: web3State.account}, fromBlock: latestBlock})
+    .once('data', async (event) => {
+      if (event.returnValues.player === web3State.account) {
+        id = event.returnValues.game_id;
+        latestBlock = event.blockNumber;
         setGame(currentState => ({
           ...currentState,
-          deck_id: event.returnValues.deck_id,
+          id: id,
           player_cards: [
             {
               code: event.returnValues.player_card_1.code,
@@ -160,50 +163,66 @@ const App = () => {
       }
     });
 
-    await web3State.contract.events.NewDealerCardDealt({filter: {game_id: id}})
-    .on('data', (event) => {
-      console.log("newDealerCardEvent");
-      console.log(event.returnValues);
-      console.log("game_id: " + game.id);
+
+
+    await web3State.contract.events.GameWon({filter: {game_id: id}, fromBlock: latestBlock})
+    .once('data', (event) => {
       if (event.returnValues.game_id === id) {
-        console.log("if passed");
-        setGame(currentState => ({
+        let winnerString = "";
+        if (event.returnValues.winner === "0") winnerString = "Dealer";
+        if (event.returnValues.winner === "1") winnerString = "Player";
+        if (event.returnValues.winner === "2") winnerString = "Tie";
+        setWinner(currentState => ({
           ...currentState,
-          dealer_cards: [...currentState.dealer_cards, {
-            code: event.returnValues.dealer_card.code,
-            value: event.returnValues.dealer_card.value
-          }]
+          chosen: true,
+          name: winnerString
         }));
+        setLoading(currentState => ({
+          ...currentState,
+          status: false,
+          message: "",
+          percentage: 100
+        }));
+        switchButtons(["reset"]);
       }
-    });
+    })
   }
 
   const playerHit = async () => {
-    console.log("game_id: " + game.id);
-    await web3State.contract.methods.playerHit(game.id).send({
+    setLoading(currentState => ({
+      ...currentState,
+      status: true,
+      message: "Hit me...",
+      percentage: 10
+    }));
+    await web3State.contract.methods.playerHitRequest(game.id).send({
       from: web3State.account
     })
-    .on('sent', (payload) => {
-      console.log("==========sent==========");
+    .once('sent', (payload) => {
       setLoading(currentState => ({
         ...currentState,
-        status: true,
-        message: "Hit me..."
+        percentage: currentState.percentage + 10
       }));
     })
-    .on('transactionHash', (hash) => {
-      console.log("==========transactionHash==========");
+    .once('transactionHash', (hash) => {
       console.log(`https://kovan.etherscan.io/tx/${hash}`);
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 10
+      }));
     })
-    .on('receipt', (receipt) => {
-      console.log("==========receipt==========");
-      console.log(receipt);
+    .once('receipt', (receipt) => {
+      latestBlock = receipt.blockNumber;
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 10
+      }));
     })
-    .on('confirmation', (confirmation, receipt, latestHash) => {
-      if (confirmation < 1) {
-        console.log("==========confirmation==========");
-        console.log(confirmation);
-      }
+    .once('confirmation', (confirmation, receipt, latestHash) => {
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 20
+      }));
     })
     .on('error', (error) => {
       console.log("==========error==========");
@@ -214,12 +233,8 @@ const App = () => {
       }));
     });
 
-
-    await web3State.contract.events.NewPlayerCardDealt({filter: {game_id: game.id}})
-    .on('data', (event) => {
-      console.log("newPlayerCardEvent");
-      console.log(event.returnValues);
-      console.log("game_id: " + game.id);
+    await web3State.contract.events.NewPlayerCardDealt({filter: {game_id: game.id}, fromBlock: latestBlock})
+    .once('data', (event) => {
       if (event.returnValues.game_id === game.id) {
         setGame(currentState => ({
           ...currentState,
@@ -237,36 +252,32 @@ const App = () => {
   }
 
   const playerStand = async () => {
-    console.log("game_id: " + game.id);
+    setLoading(currentState => ({
+      ...currentState,
+      status: true,
+      message: "Stand. Passing turn...",
+      percentage: 40
+    }));
     await web3State.contract.methods.playerStand(game.id).send({
       from: web3State.account
     })
-    .on('sent', (payload) => {
-      console.log("==========sent==========");
+    .once('sent', (payload) => {
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 40
+      }));
+    })
+    .once('transactionHash', (hash) => {
+      console.log(`https://kovan.etherscan.io/tx/${hash}`);
       setLoading(currentState => ({
         ...currentState,
         status: true,
-        message: "Stand. Passing turn..."
+        message: "Dealer's turn now. Waiting for their move...",
+        percentage: 10
       }));
     })
-    .on('transactionHash', (hash) => {
-      console.log("==========transactionHash==========");
-      console.log(`https://kovan.etherscan.io/tx/${hash}`);
-    })
-    .on('receipt', (receipt) => {
-      console.log("==========receipt==========");
-      console.log(receipt);
-    })
-    .on('confirmation', (confirmation, receipt, latestHash) => {
-      console.log(confirmation);
-      if (confirmation < 1) {
-        console.log("==========confirmation==========");
-        console.log(confirmation);
-        setLoading(currentState => ({
-          ...currentState,
-          status: false
-        }));
-      }
+    .once('receipt', (receipt) => {
+      latestBlock = receipt.blockNumber;
     })
     .on('error', (error) => {
       console.log("==========error==========");
@@ -276,6 +287,43 @@ const App = () => {
         status: false
       }));
     });
+
+    var previousCardCodes = [];
+    await web3State.contract.events.NewDealerCardDealt({filter: {game_id: game.id}, fromBlock: latestBlock})
+    .on('data', (event) => {
+      if (event.returnValues.game_id === game.id && !previousCardCodes.includes(event.returnValues.dealer_card.code)) {
+        previousCardCodes.push(event.returnValues.dealer_card.code);
+        setLoading(currentState => ({
+          ...currentState,
+          percentage: currentState.percentage + 10
+        }));
+        setGame(currentState => ({
+          ...currentState,
+          dealer_cards: [...currentState.dealer_cards, {
+            code: event.returnValues.dealer_card.code,
+            value: event.returnValues.dealer_card.value
+          }]
+        }));
+      }
+    });
+  }
+
+  const resetGame = () => {
+    setGame({
+      id: 0,
+      player_cards: [],
+      dealer_cards: []
+    });
+    setWinner(currentState => ({
+      ...currentState,
+      chosen: false,
+      name: ""
+    }));
+    setLoading(currentState => ({
+      ...currentState,
+      status: false
+    }));
+    switchButtons(["new"]);
   }
 
   const switchButtons = (buttonsArray) => {
@@ -291,14 +339,16 @@ const App = () => {
       <Navbar
         account={web3State.account}
       />
-      {loading.status && <Loading message={loading.message} />}
-      <Main
+      {loading.status && <Loading message={loading.message} percentage={loading.percentage} />}
+      {web3State.account !== '' && <Main
         newGame={newGame}
         playerHit={playerHit}
         playerStand={playerStand}
+        resetGame={resetGame}
         game={game}
         buttons={buttons}
-      />
+        winner={winner}
+      />}
     </div>
   );
 }

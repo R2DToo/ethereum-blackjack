@@ -1,10 +1,10 @@
-const Loading = ({message}) => {
+const Loading = ({message, percentage}) => {
   return (
     <div className="alert alert-info text-center" role="alert">
-      <div className="spinner-border text-primary" role="status">
-        <span className="visually-hidden">Loading...</span>
+      <h2>{message}</h2>
+      <div className="progress">
+        <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style={{width: percentage + '%'}} aria-valuenow={percentage} aria-valuemin="0" aria-valuemax="100">{percentage}%</div>
       </div>
-      <h2 className="d-inline ps-3">{message}</h2>
     </div>
   );
 }
