@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import Web3 from 'web3';
-import Navbar from './Navbar';
+import NavigationBar from './NavigationBar';
 import Main from './Main';
 import Loading from './Loading';
+import Toasts from './Toasts';
 import BlackJackABI from '../contracts/BlackjackABI.json';
 
 const App = () => {
@@ -18,6 +19,8 @@ const App = () => {
     player_cards: [],
     dealer_cards: []
   });
+
+  const [toasts, setToasts] = useState([]);
 
   const [loading, setLoading] = useState({
     status: true,
@@ -98,6 +101,7 @@ const App = () => {
     })
     .once('transactionHash', (hash) => {
       console.log(`https://kovan.etherscan.io/tx/${hash}`);
+      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -232,6 +236,7 @@ const App = () => {
     })
     .once('transactionHash', (hash) => {
       console.log(`https://kovan.etherscan.io/tx/${hash}`);
+      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -278,6 +283,7 @@ const App = () => {
     })
     .once('transactionHash', (hash) => {
       console.log(`https://kovan.etherscan.io/tx/${hash}`);
+      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
       setLoading(currentState => ({
         ...currentState,
         status: true,
@@ -316,6 +322,7 @@ const App = () => {
     })
     .once('transactionHash', (hash) => {
       console.log(`https://kovan.etherscan.io/tx/${hash}`);
+      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -350,6 +357,7 @@ const App = () => {
       player_cards: [],
       dealer_cards: []
     });
+    setToasts([]);
     setWinner(currentState => ({
       ...currentState,
       chosen: false,
@@ -372,7 +380,7 @@ const App = () => {
 
   return (
     <div className="App">
-      <Navbar
+      <NavigationBar
         account={web3State.account}
       />
       {loading.status && <Loading message={loading.message} percentage={loading.percentage} />}
@@ -386,6 +394,10 @@ const App = () => {
         buttons={buttons}
         winner={winner}
       />}
+      <Toasts
+        toasts={toasts}
+        setToasts={setToasts}
+      />
     </div>
   );
 }

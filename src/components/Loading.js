@@ -1,11 +1,12 @@
+import Alert from 'react-bootstrap/Alert';
+import ProgressBar from 'react-bootstrap/ProgressBar';
+
 const Loading = ({message, percentage}) => {
   return (
-    <div className="alert alert-info text-center" role="alert">
+    <Alert variant="info" className="text-center">
       <h2>{message}</h2>
-      <div className="progress">
-        <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style={{width: percentage + '%'}} aria-valuenow={percentage} aria-valuemin="0" aria-valuemax="100">{percentage}%</div>
-      </div>
-    </div>
+      <ProgressBar now={percentage} label={`${percentage} %`} striped animated style={{ height: '20px' }}></ProgressBar>
+    </Alert>
   );
 }
 
