@@ -1,3 +1,4 @@
+import {useEffect, useState } from 'react';
 import Toast from 'react-bootstrap/Toast';
 
 const Toasts = ({toasts, setToasts}) => {
@@ -14,7 +15,7 @@ const Toasts = ({toasts, setToasts}) => {
           <Toast key={`toast_${index}`} show={true} autohide delay={60000} onClose={() => removeToast(index)}>
             <Toast.Header>
               <strong className="mr-auto">Transaction Hash</strong>
-              <small>Just now</small>
+              <small>A moment ago</small>
             </Toast.Header>
             <Toast.Body>
               <a className="text-break" href={value} target="_blank" rel="noopener noreferrer">{value}</a>

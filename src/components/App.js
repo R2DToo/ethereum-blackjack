@@ -53,6 +53,7 @@ const App = () => {
   const loadBlockchainData = async () => {
     if (typeof window.ethereum !== "undefined") {
       const web3 = new Web3(window.ethereum);
+      await web3.eth.requestAccounts();
       const networkId = await web3.eth.net.getId();
       console.log("networkId: " + networkId);
       if(networkId!==42){
