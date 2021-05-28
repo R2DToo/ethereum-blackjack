@@ -15,6 +15,13 @@ code {
 }
 
 img {
-  width: 9.09%;
-  height: auto;
+  width: 11.1%;
+}
+
+#loading_alert {
+  position: fixed;
+  top: 56px;
+  left: 0px;
+  width: 100%;
+  z-index: 10;
 }

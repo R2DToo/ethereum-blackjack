@@ -1,4 +1,6 @@
-import {useEffect, useState } from 'react';
+import Col from 'react-bootstrap/Col';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
 import Toast from 'react-bootstrap/Toast';
 
 const Toasts = ({toasts, setToasts}) => {
@@ -9,21 +11,25 @@ const Toasts = ({toasts, setToasts}) => {
   }
 
   return (
-    <>
-      {toasts.map((value, index) => {
-        return (
-          <Toast key={`toast_${index}`} show={true} autohide delay={60000} onClose={() => removeToast(index)}>
-            <Toast.Header>
-              <strong className="mr-auto">Transaction Hash</strong>
-              <small>A moment ago</small>
-            </Toast.Header>
-            <Toast.Body>
-              <a className="text-break" href={value} target="_blank" rel="noopener noreferrer">{value}</a>
-            </Toast.Body>
-          </Toast>
-        )
-      })}
-    </>
+    <Container>
+      <Row>
+        {toasts.map((value, index) => {
+          return (
+            <Col key={`toast_${index}`}>
+              <Toast show={true} onClose={() => removeToast(index)} animation>
+                <Toast.Header>
+                  <strong className="mr-auto">Transaction Hash</strong>
+                  <small>A moment ago</small>
+                </Toast.Header>
+                <Toast.Body>
+                  <a className="text-break" href={value} target="_blank" rel="noopener noreferrer">{value}</a>
+                </Toast.Body>
+              </Toast>
+            </Col>
+          )
+        })}
+      </Row>
+    </Container>
   )
 }
 

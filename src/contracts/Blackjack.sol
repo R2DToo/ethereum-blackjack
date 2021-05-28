@@ -2,22 +2,29 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
-import "@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
+import "https://github.com/smartcontractkit/chainlink/blob/develop/evm-contracts/src/v0.6/VRFConsumerBase.sol";
 
-contract Blackjack is ChainlinkClient {
+contract Blackjack2 is VRFConsumerBase {
 
+    uint256 public checker;
     uint128 private currentGameId = 0;
     uint128 private lastGameId;
     mapping(uint256 => Game) public games;
     address payable private admin;
 
-    bytes32 constant jobId = "b7285d4859da4b289c7861db971baf0a";
-    uint256 constant fee = 0.1 * 10 ** 18;
+    bytes32 internal keyHash;
+    uint256 internal fee;
+    address constant VRFC_ADDRESS = 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9;
+    address constant LINK_ADDRESS = 0xa36085F69e2889c224210F603D836748e7dC0088;
+    uint256 constant USER_SEED = 456513215649823187987;
+
+    string[] private CARD_CODES = ["AH", "AD", "AC", "AS", "2H", "2D", "2C", "2S", "3H", "3D", "3C", "3S", "4H", "4D", "4C", "4S", "5H", "5D", "5C", "5S", "6H", "6D", "6C", "6S", "7H", "7D", "7C", "7S", "8H", "8D", "8C", "8S", "9H", "9D", "9C", "9S", "0H", "0D", "0C", "0S", "JH", "JD", "JC", "JS", "QH", "QD", "QC", "QS", "KH", "KD", "KC", "KS"];
+
 
     struct Game {
         uint128 id;
-        string deck_id;
         address payable player;
+        uint256 bet;
         bytes32 oracle_req_id;
         mapping(uint8 => Card) player_cards;
         mapping(uint8 => Card) dealer_cards;
@@ -56,13 +63,24 @@ contract Blackjack is ChainlinkClient {
         Winner winner
     );
 
-    constructor() public {
-        setPublicChainlinkToken();
-        setChainlinkOracle(address(0xAA1DC356dc4B18f30C347798FD5379F3D77ABC5b));
+    event Received(
+        address indexed sender,
+        uint256 amount
+    );
+
+    event Withdraw(
+        address admin,
+        uint256 amount
+    );
+
+    constructor() VRFConsumerBase(VRFC_ADDRESS, LINK_ADDRESS) public {
+        keyHash = 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
+        fee = 0.1 * 10 ** 18; // 0.1 LINK
         admin = msg.sender;
     }
 
     function newGame() public {
+        require(LINK.balanceOf(address(this)) >= (fee * 4), "Not enough LINK - fill contract with faucet");
         Game memory _newGame;
         _newGame.id = currentGameId;
         lastGameId = currentGameId;
@@ -70,167 +88,87 @@ contract Blackjack is ChainlinkClient {
         _newGame.player = msg.sender;
         _newGame.whos_turn = Player.Player;
         _newGame.winner = Winner.Unknown;
-        _newGame.oracle_req_id = shuffleNewDeckRequest();
+        _newGame.oracle_req_id = drawCardRequest(USER_SEED);
 
         emit NewGame(_newGame.id, _newGame.player);
 
         games[lastGameId] = _newGame;
     }
 
-    function shuffleNewDeckRequest() internal returns (bytes32 requestId) {
-        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.shuffleNewDeckResponse.selector);
-
-        request.add("get", "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1");
-        request.add("path", "deck_id");
-
-        return sendChainlinkRequest(request, fee);
+    function drawCardRequest(uint256 userProvidedSeed) internal returns (bytes32) {
+        return requestRandomness(keyHash, fee, userProvidedSeed);
     }
 
-    function shuffleNewDeckResponse(bytes32 _requestId, bytes32 _volume) public recordChainlinkFulfillment(_requestId) {
-        if (games[lastGameId].oracle_req_id == _requestId) {
-            shuffleNewDeck(lastGameId, _volume);
+    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+        checker = randomness;
+        if (games[lastGameId].oracle_req_id == requestId) {
+            addCardToHand(lastGameId, CARD_CODES[randomness.mod(52)]);
         } else {
             for (uint128 i = 0; i < currentGameId; i++) {
-                if (games[i].oracle_req_id == _requestId) {
-                    shuffleNewDeck(i, _volume);
+                if (games[i].oracle_req_id == requestId) {
+                    addCardToHand(i, CARD_CODES[randomness.mod(52)]);
                 }
             }
         }
     }
 
-    function shuffleNewDeck(uint128 gameIndex, bytes32 response) internal {
-        games[gameIndex].deck_id = bytes32ToString(response);
-        games[gameIndex].oracle_req_id = drawPlayerCardRequest(gameIndex);
-    }
-
-    function drawPlayerCardRequest(uint128 gameIndex) internal returns (bytes32 requestId) {
-        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.drawPlayerCardResponse.selector);
-        string memory urlBase = "https://deckofcardsapi.com/api/deck/";
-        string memory urlEnd = "/draw/?count=1";
-        bytes memory url = abi.encodePacked(urlBase, games[gameIndex].deck_id, urlEnd);
-
-        request.add("get", string(url));
-        request.add("path", "cards.0.code");
-
-        return sendChainlinkRequest(request, fee);
-    }
-
-    function drawPlayerCardResponse(bytes32 _requestId, bytes32 _volume) public recordChainlinkFulfillment(_requestId) {
-        if (games[lastGameId].oracle_req_id == _requestId) {
-            drawPlayerCard(lastGameId, _volume);
-        } else {
-            for (uint128 i = 0; i < currentGameId; i++) {
-                if (games[i].oracle_req_id == _requestId) {
-                    drawPlayerCard(i, _volume);
+    function addCardToHand(uint128 gameIndex, string memory cardCode) internal {
+        string memory valueString = substring(cardCode, 0, 1);
+        if (games[gameIndex].whos_turn == Player.Player) {
+            games[gameIndex].player_cards[games[gameIndex].playerCardCount] = Card(cardCode, valueStringToValueUint(valueString));
+            emit NewPlayerCardDealt(games[gameIndex].id, games[gameIndex].player_cards[games[gameIndex].playerCardCount]);
+            games[gameIndex].playerCardCount = games[gameIndex].playerCardCount + 1;
+            if (games[gameIndex].playerCardCount <= 2) {
+                games[gameIndex].whos_turn = Player.Dealer;
+                games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+            } else if (getTotalHandValue(gameIndex, Player.Player) >= 21) {
+                evaluateHands(gameIndex);
+            } else if (games[gameIndex].playerCardCount >= 11) {
+                if (getTotalHandValue(gameIndex, Player.Dealer) < 17) {
+                    games[gameIndex].whos_turn = Player.Dealer;
+                    games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+                } else {
+                    evaluateHands(gameIndex);
                 }
             }
-        }
-    }
-
-    function drawPlayerCard(uint128 gameIndex, bytes32 response) internal {
-        string memory valueByte = substring(bytes32ToString(response), 0, 1);
-        games[gameIndex].player_cards[games[gameIndex].playerCardCount] = Card(bytes32ToString(response), valueStringToValueUint(valueByte));
-        emit NewPlayerCardDealt(games[gameIndex].id, games[gameIndex].player_cards[games[gameIndex].playerCardCount]);
-        games[gameIndex].playerCardCount = games[gameIndex].playerCardCount + 1;
-        if (games[gameIndex].dealerCardCount < 2) {
-            games[gameIndex].oracle_req_id = drawDealerCardRequest(gameIndex);
-        }
-    }
-
-    function drawDealerCardRequest(uint128 gameIndex) internal returns (bytes32 requestId) {
-        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.drawDealerCardResponse.selector);
-        string memory urlBase = "https://deckofcardsapi.com/api/deck/";
-        string memory urlEnd = "/draw/?count=1";
-        bytes memory url = abi.encodePacked(urlBase, games[gameIndex].deck_id, urlEnd);
-
-        request.add("get", string(url));
-        request.add("path", "cards.0.code");
-
-        return sendChainlinkRequest(request, fee);
-    }
-
-    function drawDealerCardResponse(bytes32 _requestId, bytes32 _volume) public recordChainlinkFulfillment(_requestId) {
-        if (games[lastGameId].oracle_req_id == _requestId) {
-            drawDealerCard(lastGameId, _volume);
-        } else {
-            for (uint128 i = 0; i < currentGameId; i++) {
-                if (games[i].oracle_req_id == _requestId) {
-                    drawDealerCard(i, _volume);
-                }
-            }
-        }
-    }
-
-    function drawDealerCard(uint128 gameIndex, bytes32 response) internal {
-        string memory valueByte = substring(bytes32ToString(response), 0, 1);
-        games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount] = Card(bytes32ToString(response), valueStringToValueUint(valueByte));
-        emit NewDealerCardDealt(games[gameIndex].id, games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount]);
-        games[gameIndex].dealerCardCount = games[gameIndex].dealerCardCount + 1;
-        if (games[gameIndex].playerCardCount < 2) {
-            games[gameIndex].oracle_req_id = drawPlayerCardRequest(gameIndex);
-        } else {
-            checkBlackjack(gameIndex);
-        }
-    }
-
-    function playerHitRequest(uint128 gameIndex) external {
-        require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
-        require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
-        require(games[gameIndex].playerCardCount < 11, "You have reached the card limit");
-        require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
-        require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
-        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.playerHitResponse.selector);
-        string memory urlBase = "https://deckofcardsapi.com/api/deck/";
-        string memory urlEnd = "/draw/?count=1";
-        bytes memory url = abi.encodePacked(urlBase, games[gameIndex].deck_id, urlEnd);
-
-        request.add("get", string(url));
-        request.add("path", "cards.0.code");
-
-        games[gameIndex].oracle_req_id = sendChainlinkRequest(request, fee);
-    }
-
-    function playerHitResponse(bytes32 _requestId, bytes32 _volume) public recordChainlinkFulfillment(_requestId) {
-        if (games[lastGameId].oracle_req_id == _requestId) {
-            playerHit(lastGameId, _volume);
-        } else {
-            for (uint128 i = 0; i < currentGameId; i++) {
-                if (games[i].oracle_req_id == _requestId) {
-                    playerHit(i, _volume);
-                }
-            }
-        }
-    }
-
-    function playerHit(uint128 gameIndex, bytes32 response) internal {
-        string memory valueByte = substring(bytes32ToString(response), 0, 1);
-        games[gameIndex].player_cards[games[gameIndex].playerCardCount] = Card(bytes32ToString(response), valueStringToValueUint(valueByte));
-
-        emit NewPlayerCardDealt(games[gameIndex].id, games[gameIndex].player_cards[games[gameIndex].playerCardCount]);
-
-        games[gameIndex].playerCardCount = games[gameIndex].playerCardCount + 1;
-        if (getTotalHandValue(gameIndex, Player.Player) > 21) {
-            games[gameIndex].whos_turn = Player.Dealer;
-            evaluateHands(gameIndex);
-        } else if (games[gameIndex].playerCardCount >= 11 || (getTotalHandValue(gameIndex, Player.Player) == 21)) {
-            games[gameIndex].whos_turn = Player.Dealer;
-            if (getTotalHandValue(gameIndex, Player.Dealer) < 17) {
-                dealerHitRequest(gameIndex);
+        } else if (games[gameIndex].whos_turn == Player.Dealer) {
+            games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount] = Card(cardCode, valueStringToValueUint(valueString));
+            emit NewDealerCardDealt(games[gameIndex].id, games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount]);
+            games[gameIndex].dealerCardCount = games[gameIndex].dealerCardCount + 1;
+            if (games[gameIndex].dealerCardCount < 2) {
+                games[gameIndex].whos_turn = Player.Player;
+                games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+            } else if (games[gameIndex].dealerCardCount == 2) {
+                games[gameIndex].whos_turn = Player.Player;
+                checkBlackjack(gameIndex);
+            } else if (games[gameIndex].dealerCardCount < 11 && getTotalHandValue(gameIndex, Player.Dealer) < 17) {
+                games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
             } else {
                 evaluateHands(gameIndex);
             }
         }
     }
 
-    function playerStand(uint128 gameIndex) external {
+    function playerHit(uint128 gameIndex) external {
         require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
         require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
+        require(games[gameIndex].playerCardCount >= 2 && games[gameIndex].dealerCardCount >= 2, "Starting cards have not been dealt yet");
         require(games[gameIndex].playerCardCount < 11, "You have reached the card limit");
         require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
         require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
-        games[gameIndex].whos_turn = Player.Dealer;
+        games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+    }
+
+    function playerStand(uint128 gameIndex) external {
+        require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
+        require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
+        require(games[gameIndex].playerCardCount >= 2 && games[gameIndex].dealerCardCount >= 2, "Starting cards have not been dealt yet");
+        require(games[gameIndex].playerCardCount < 11, "You have reached the card limit");
+        require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
+        require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
         if (getTotalHandValue(gameIndex, Player.Dealer) < 17) {
-            dealerHitRequest(gameIndex);
+            games[gameIndex].whos_turn = Player.Dealer;
+            games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
         } else {
             evaluateHands(gameIndex);
         }
@@ -239,6 +177,7 @@ contract Blackjack is ChainlinkClient {
     function playerSurrender(uint128 gameIndex) external {
         require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
         require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
+        require(games[gameIndex].playerCardCount >= 2 && games[gameIndex].dealerCardCount >= 2, "Starting cards have not been dealt yet");
         require(games[gameIndex].playerCardCount < 11, "You have reached the card limit");
         require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
         require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
@@ -246,47 +185,11 @@ contract Blackjack is ChainlinkClient {
         emit GameWon(games[gameIndex].id, games[gameIndex].winner);
     }
 
-    function dealerHitRequest(uint128 gameIndex) internal {
-        require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
-        require(games[gameIndex].whos_turn == Player.Dealer, "It's not your turn");
-        require(games[gameIndex].dealerCardCount < 11, "You have reached the card limit");
-        require(getTotalHandValue(gameIndex, Player.Dealer) != 21, "You already have blackjack");
-        require(getTotalHandValue(gameIndex, Player.Dealer) < 21, "You have bust");
-        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.dealerHitResponse.selector);
-        string memory urlBase = "https://deckofcardsapi.com/api/deck/";
-        string memory urlEnd = "/draw/?count=1";
-        bytes memory url = abi.encodePacked(urlBase, games[gameIndex].deck_id, urlEnd);
-
-        request.add("get", string(url));
-        request.add("path", "cards.0.code");
-
-        games[gameIndex].oracle_req_id = sendChainlinkRequest(request, fee);
-    }
-
-    function dealerHitResponse(bytes32 _requestId, bytes32 _volume) public recordChainlinkFulfillment(_requestId) {
-        if (games[lastGameId].oracle_req_id == _requestId) {
-            dealerHit(lastGameId, _volume);
-        } else {
-            for (uint128 i = 0; i < currentGameId; i++) {
-                if (games[i].oracle_req_id == _requestId) {
-                    dealerHit(i, _volume);
-                }
-            }
-        }
-    }
-
-    function dealerHit(uint128 gameIndex, bytes32 response) internal {
-        string memory valueByte = substring(bytes32ToString(response), 0, 1);
-        games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount] = Card(bytes32ToString(response), valueStringToValueUint(valueByte));
-
-        emit NewDealerCardDealt(games[gameIndex].id, games[gameIndex].dealer_cards[games[gameIndex].dealerCardCount]);
-
-        games[gameIndex].dealerCardCount = games[gameIndex].dealerCardCount + 1;
-        checkBlackjack(gameIndex);
-        if (games[gameIndex].dealerCardCount < 11 && getTotalHandValue(gameIndex, Player.Dealer) < 17) {
-            dealerHitRequest(gameIndex);
-        } else {
-            evaluateHands(gameIndex);
+    function getCode(uint128 gameIndex, Player player, uint8 cardIndex) public view returns (string memory) {
+        if (player == Player.Player) {
+            return games[gameIndex].player_cards[cardIndex].code;
+        } else if (player == Player.Dealer) {
+            return games[gameIndex].dealer_cards[cardIndex].code;
         }
     }
 
@@ -334,8 +237,6 @@ contract Blackjack is ChainlinkClient {
             games[gameIndex].winner = Winner.Tie;
         } else if (playerCardValueTotal == 21) {
             games[gameIndex].winner = Winner.Player;
-        } else if (dealerCardValueTotal == 21) {
-            games[gameIndex].winner = Winner.Dealer;
         } else {
             games[gameIndex].winner = Winner.Unknown;
         }
@@ -347,18 +248,22 @@ contract Blackjack is ChainlinkClient {
     function evaluateHands(uint128 gameIndex) internal {
         uint8 playerCardValueTotal = getTotalHandValue(gameIndex, Player.Player);
         uint8 dealerCardValueTotal = getTotalHandValue(gameIndex, Player.Dealer);
-        if (playerCardValueTotal > 21 && dealerCardValueTotal > 21) {
-            games[gameIndex].winner = Winner.Tie;
-        } else if (playerCardValueTotal > 21 && dealerCardValueTotal <= 21) {
+        if (playerCardValueTotal > 21) {
             games[gameIndex].winner = Winner.Dealer;
-        } else if (dealerCardValueTotal > 21 && playerCardValueTotal <= 21) {
+        } else if (dealerCardValueTotal > 21) {
             games[gameIndex].winner = Winner.Player;
-        } else if (playerCardValueTotal > dealerCardValueTotal) {
+        } else if (playerCardValueTotal == 21 && dealerCardValueTotal == 21) {
+            games[gameIndex].winner = Winner.Tie;
+        } else if (playerCardValueTotal == 21) {
             games[gameIndex].winner = Winner.Player;
-        } else if (playerCardValueTotal < dealerCardValueTotal) {
+        } else if (dealerCardValueTotal == 21) {
             games[gameIndex].winner = Winner.Dealer;
         } else if (playerCardValueTotal == dealerCardValueTotal) {
             games[gameIndex].winner = Winner.Tie;
+        } else if (playerCardValueTotal > dealerCardValueTotal) {
+            games[gameIndex].winner = Winner.Player;
+        } else if (dealerCardValueTotal > playerCardValueTotal) {
+            games[gameIndex].winner = Winner.Dealer;
         }
         if (games[gameIndex].winner != Winner.Unknown) {
             emit GameWon(games[gameIndex].id, games[gameIndex].winner);
@@ -371,7 +276,7 @@ contract Blackjack is ChainlinkClient {
         } else if (equals(_value, "A")) {
             _value = "11";
         }
-        return stringToUint(_value);
+        return uint8(stringToUint(_value));
     }
 
     function bytes32ToString(bytes32 _bytes32) internal pure returns (string memory) {
@@ -397,7 +302,7 @@ contract Blackjack is ChainlinkClient {
         }
     }
 
-    function stringToUint(string memory s) internal pure returns (uint8 result) {
+    function stringToUint(string memory s) internal pure returns (uint result) {
         bytes memory b = bytes(s);
         uint i;
         result = 0;
