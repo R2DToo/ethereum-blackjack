@@ -4,10 +4,11 @@ import Row from 'react-bootstrap/Row';
 import Toast from 'react-bootstrap/Toast';
 
 const Toasts = ({toasts, setToasts}) => {
+
   const removeToast = (index) => {
-    setToasts(currentState => (
-      currentState.splice(index, 1)
-    ));
+    let newToasts = [...toasts];
+    newToasts.splice(index, 1);
+    setToasts(newToasts);
   }
 
   return (
