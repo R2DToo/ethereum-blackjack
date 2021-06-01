@@ -14,8 +14,12 @@ code {
     monospace;
 }
 
-img {
+.card_pictures {
   width: 11.1%;
+}
+
+.chip_pictures {
+  width: 14%;
 }
 
 #loading_alert {
@@ -24,4 +28,33 @@ img {
   left: 0px;
   width: 100%;
   z-index: 10;
+}
+
+[type=radio] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+[type=radio] + img {
+  cursor: pointer;
+}
+
+[type=radio]:checked + img {
+  box-shadow: 0 0 0 4px #146150;
+  transform: scale(1.08);
+  z-index: 5;
+}
+
+label {
+  display: inline;
+}
+
+#withdraw_button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 20px;
+  background-color: #7b64ed;
 }
