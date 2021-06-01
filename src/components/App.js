@@ -76,7 +76,7 @@ const App = () => {
 
   useEffect(() => {
     const getBalance = async () => {
-      if (web3Instance !== "") {
+      if (web3State.account !== "") {
         const accounts = await web3Instance.eth.getAccounts();
         const playerBalance = await web3Instance.eth.getBalance(accounts[0]);
         const dealerBalance = await web3Instance.eth.getBalance(contract_address);
@@ -88,7 +88,7 @@ const App = () => {
       }
     };
     getBalance();
-  }, [game, web3Instance])
+  }, [game, web3Instance, web3State])
 
   return (
     <div className="App">
