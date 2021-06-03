@@ -1,31 +1,32 @@
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
-import Toast from 'react-bootstrap/Toast';
+import MyToast from './MyToast';
 
 const Toasts = ({toasts, setToasts}) => {
 
   const removeToast = (index) => {
     let newToasts = [...toasts];
+    console.log("Toasts before splice: ", newToasts);
     newToasts.splice(index, 1);
+    console.log("Toasts after splice: ", newToasts);
     setToasts(newToasts);
   }
 
   return (
     <Container>
-      <Row>
+      <Row md={{cols:3}} sm={{cols:2}} xs={{cols:1}}>
         {toasts.map((value, index) => {
           return (
             <Col key={`toast_${index}`}>
-              <Toast show={true} onClose={() => removeToast(index)} animation>
-                <Toast.Header>
-                  <strong className="mr-auto">Transaction Hash</strong>
-                  <small>A moment ago</small>
-                </Toast.Header>
-                <Toast.Body>
-                  <a className="text-break" href={value} target="_blank" rel="noopener noreferrer">{value}</a>
-                </Toast.Body>
-              </Toast>
+              <MyToast
+                toasts={toasts}
+                link={value.link}
+                timer={value.timer}
+                index={index}
+                removeToast={removeToast}
+                setToasts={setToasts}
+              />
             </Col>
           )
         })}

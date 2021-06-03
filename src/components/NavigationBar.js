@@ -3,7 +3,7 @@ import Navbar from 'react-bootstrap/Navbar';
 
 const NavigationBar = ({account, loadBlockchainData}) => {
   return (
-    <Navbar bg="dark" variant="dark" expand="sm">
+    <Navbar bg="dark" variant="dark" expand="md">
       <Navbar.Brand href="/">♥♣Blackjack♠♦</Navbar.Brand>
       <Navbar.Toggle />
       <Navbar.Collapse className="justify-content-end">

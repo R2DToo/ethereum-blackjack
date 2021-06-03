@@ -49,7 +49,10 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .once('transactionHash', (hash) => {
-      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
+      setToasts(currentState => [
+        ...currentState,
+        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
+      ]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -227,7 +230,10 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .once('transactionHash', (hash) => {
-      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
+      setToasts(currentState => [
+        ...currentState,
+        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
+      ]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -273,7 +279,10 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .once('transactionHash', (hash) => {
-      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
+      setToasts(currentState => [
+        ...currentState,
+        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
+      ]);
       setLoading(currentState => ({
         ...currentState,
         status: true,
@@ -311,7 +320,10 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .once('transactionHash', (hash) => {
-      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
+      setToasts(currentState => [
+        ...currentState,
+        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
+      ]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -360,7 +372,10 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .once('transactionHash', (hash) => {
-      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
+      setToasts(currentState => [
+        ...currentState,
+        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
+      ]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -405,7 +420,10 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .once('transactionHash', (hash) => {
-      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
+      setToasts(currentState => [
+        ...currentState,
+        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
+      ]);
       setLoading(currentState => ({
         ...currentState,
         percentage: currentState.percentage + 20
@@ -469,7 +487,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       <Card style={{ height: "75vh" }} className="my-3 w-100">
         <Card.Body>
           <Container className="h-100">
-            <Row className="justify-content-center align-items-start mb-xl-3" style={winner.chosen?{height: "40%"}:{height: "50%"}}>
+            <Row className="justify-content-center align-items-start mb-xl-3" style={{ height: "40%" }}>
               <div className="card_row">
                 {game.dealer_cards.map((value, index) => {
                   let src = "";
@@ -498,7 +516,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
                 <h4 className="m-0">The winner is determined to be ....... {winner.name}!</h4>
               </Alert>}
             </Row>
-            <Row className="justify-content-center align-items-end mt-xl-3" style={winner.chosen?{height: "40%"}:{height: "50%"}}>
+            <Row className="justify-content-center align-items-end mt-xl-3" style={{ height: "45%" }}>
               <div className="card_row">
                 {game.player_cards.map((value, index) => {
                   return (

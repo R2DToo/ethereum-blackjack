@@ -16,7 +16,6 @@ code {
 
 .card_row {
   display: flex;
-  padding: rem;
 }
 
 .playing_card {
@@ -83,6 +82,6 @@ label {
 
 @media (max-width: 576px) {
   .chip_pictures {
-    width: 70px;
+    width: 60px;
   }
 }

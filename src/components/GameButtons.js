@@ -54,7 +54,7 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
         </Col>
       </Row>}
       <Row className={buttons.new?"mt-3":""}>
-        {buttons.new && <Col><Button
+        {buttons.new && <Col xs={12}><Button
           type="button"
           variant="primary"
           size="lg"
@@ -66,7 +66,7 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
         >
           New Game
         </Button></Col>}
-        {buttons.hit && <Col><Button
+        {buttons.hit && <Col lg={true} md={6} xs={12}><Button
           type="button"
           variant="primary"
           className="mr-2"
@@ -79,7 +79,7 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
         >
           Hit
         </Button></Col>}
-        {buttons.stand && <Col><Button
+        {buttons.stand && <Col lg={true} md={6} xs={12}><Button
           type="button"
           variant="primary"
           className="mr-2"
@@ -92,7 +92,7 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
         >
           Stand
         </Button></Col>}
-        {buttons.double && <Col><Button
+        {buttons.double && <Col lg={true} md={6} xs={12}><Button
           type="button"
           variant="primary"
           className="mr-2"
@@ -105,7 +105,7 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
         >
           Double
         </Button></Col>}
-        {buttons.split && <Col><Button
+        {buttons.split && <Col lg={true} md={6} xs={12}><Button
           type="button"
           variant="primary"
           className="mr-2"
@@ -115,7 +115,7 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
         >
           Split
         </Button></Col>}
-        {buttons.surrender && <Col><Button
+        {buttons.surrender && <Col lg={true} md={6} xs={12}><Button
           type="button"
           variant="primary"
           className="mr-2"
@@ -128,7 +128,7 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
         >
           Surrender
         </Button></Col>}
-        {buttons.reset && <Col><Button
+        {buttons.reset && <Col xs={12}><Button
           type="button"
           variant="primary"
           size="lg"
