@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useInterval from './useInterval';
 import Alert from 'react-bootstrap/Alert';
 import Accordion from 'react-bootstrap/Accordion';
 import Button from 'react-bootstrap/Button';
@@ -11,9 +12,6 @@ import GameButtons from './GameButtons';
 import customCardBacking from './images/customCardBacking.png';
 
 const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }) => {
-  var lastPlayerEventLength, lastDealerEventLength = 0;
-  var playerEventIntervalId, dealerEventIntervalId, gameWonIntervalId = 0;
-
   const[buttons, setButtons] = useState({
     new: true,
   });
@@ -23,7 +21,11 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     name: ""
   });
 
-  var latestBlock = 25166816;
+  var latestBlock = 25204335;
+
+  useInterval(() => checkForPlayerCards(), game.id!==-1&&winner.chosen===false?6000:null);
+  useInterval(() => checkForDealerCards(), game.id!==-1&&winner.chosen===false?6000:null);
+  useInterval(() => checkGameWon(), game.id!==-1&&winner.chosen===false?6000:null);
 
   const newGame = async (bet) => {
     if (bet <= 0) return;
@@ -63,7 +65,6 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       if (receipt.events.NewGame.returnValues.player === web3State.account) {
         id = receipt.events.NewGame.returnValues.game_id;
         console.log("Game ID: " + id);
-        //console.log(receipt);
         latestBlock = receipt.blockNumber;
         setGame(currentState => ({
           ...currentState,
@@ -74,11 +75,9 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
           message: "Dealer is drawing the starting cards...",
           percentage: 20
         }));
-        lastPlayerEventLength = 0;
-        lastDealerEventLength = 0;
-        playerEventIntervalId = setInterval(() => checkForPlayerCards(id), 6000);
-        dealerEventIntervalId = setInterval(() => checkForDealerCards(id), 6000);
-        gameWonIntervalId = setInterval(() => checkGameWon(id), 6000);
+        // playerEventIntervalId = setInterval(() => checkForPlayerCards(id), 6000);
+        // dealerEventIntervalId = setInterval(() => checkForDealerCards(id), 6000);
+        // gameWonIntervalId = setInterval(() => checkGameWon(id), 6000);
       }
     })
     .on('error', (error) => {
@@ -93,32 +92,37 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
 
 
 
-  const checkForPlayerCards = async (id) => {
+  const checkForPlayerCards = async () => {
     console.log("check player cards");
+    //console.log("GAME: ", game);
     await web3State.contract.getPastEvents("NewPlayerCardDealt", {
-      filter: {game_id: id},
+      filter: {game_id: game.id},
       fromBlock: latestBlock
     },
       (error, events) => {
         if (error) {
           console.log(error);
         } else if (events) {
-          //console.log("NewPlayerCardDealt Past Events")
-          //console.log(events);
-          if (events.length > lastPlayerEventLength) {
+          if (events.length > game.playerCardCount) {
             console.log(events);
-            lastPlayerEventLength++;
             setGame(currentState => ({
               ...currentState,
               player_cards: [...currentState.player_cards, {
                 code: events[events.length - 1].returnValues.player_card.code,
                 value: events[events.length - 1].returnValues.player_card.value
-              }]
+              }],
+              playerCardCount: currentState.playerCardCount + 1
             }));
             if (events.length <= 2) {
               setLoading(currentState => ({
                 ...currentState,
                 percentage: currentState.percentage + 20
+              }));
+            } else if (game.doubleDown) {
+              setLoading(currentState => ({
+                ...currentState,
+                message: "Dealer's turn now. Waiting for their move...",
+                percentage: 20
               }));
             } else {
               setLoading(currentState => ({
@@ -132,27 +136,25 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     );
   }
 
-  const checkForDealerCards = async (id) => {
+  const checkForDealerCards = async () => {
     console.log("check dealer cards");
     await web3State.contract.getPastEvents("NewDealerCardDealt", {
-      filter: {game_id: id},
+      filter: {game_id: game.id},
       fromBlock: latestBlock
     },
       (error, events) => {
         if (error) {
           console.log(error);
         } else if (events) {
-          //console.log("NewDealerCardDealt Past Events")
-          //console.log(events);
-          if (events.length > lastDealerEventLength) {
+          if (events.length > game.dealerCardCount) {
             console.log(events);
-            lastDealerEventLength++;
             setGame(currentState => ({
               ...currentState,
               dealer_cards: [...currentState.dealer_cards, {
                 code: events[events.length - 1].returnValues.dealer_card.code,
                 value: events[events.length - 1].returnValues.dealer_card.value
-              }]
+              }],
+              dealerCardCount: currentState.dealerCardCount + 1
             }));
             if (events.length < 2) {
               setLoading(currentState => ({
@@ -160,7 +162,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
                 percentage: currentState.percentage + 20
               }));
             } else if (events.length === 2) {
-              switchButtons(["hit", "stand", "surrender"]);
+              switchButtons(["hit", "stand", "double", "surrender"]);
               setLoading(currentState => ({
                 ...currentState,
                 status: false
@@ -177,9 +179,9 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     );
   }
 
-  const checkGameWon = async (id) => {
+  const checkGameWon = async () => {
     await web3State.contract.getPastEvents("GameWon", {
-      filter: {game_id: id},
+      filter: {game_id: game.id},
       fromBlock: latestBlock
     },
       (error, events) => {
@@ -190,11 +192,6 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
           if (events[0].returnValues.winner === "0") winnerString = "Dealer";
           if (events[0].returnValues.winner === "1") winnerString = "Player";
           if (events[0].returnValues.winner === "2") winnerString = "Tie";
-          clearInterval(playerEventIntervalId);
-          clearInterval(dealerEventIntervalId);
-          clearInterval(gameWonIntervalId);
-          checkForPlayerCards();
-          checkForDealerCards();
           setWinner(currentState => ({
             ...currentState,
             chosen: true,
@@ -213,6 +210,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
   }
 
   const playerHit = async () => {
+    console.log("playerHit GAME: ", game);
     setLoading(currentState => ({
       ...currentState,
       status: true,
@@ -258,6 +256,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
   }
 
   const playerStand = async () => {
+    console.log("playerStand GAME: ", game);
     setLoading(currentState => ({
       ...currentState,
       status: true,
@@ -283,6 +282,56 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .once('receipt', (receipt) => {
+    })
+    .on('error', (error) => {
+      console.log("==========error==========");
+      console.log(error);
+      setLoading(currentState => ({
+        ...currentState,
+        status: false
+      }));
+    });
+  }
+
+  const playerDouble = async (bet) => {
+    setLoading(currentState => ({
+      ...currentState,
+      status: true,
+      message: "Doubling down...",
+      percentage: 10
+    }));
+    await web3State.contract.methods.playerDouble(game.id).send({
+      from: web3State.account,
+      value: bet
+    })
+    .once('sent', (payload) => {
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 10
+      }));
+    })
+    .once('transactionHash', (hash) => {
+      setToasts(currentState => [...currentState, `https://kovan.etherscan.io/tx/${hash}`]);
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 20
+      }));
+    })
+    .once('confirmation', (confirmation, receipt, latestHash) => {
+      setGame(currentState => ({
+        ...currentState,
+        doubleDown: true
+      }));
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 20
+      }));
+    })
+    .once('receipt', (receipt) => {
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 20
+      }));
     })
     .on('error', (error) => {
       console.log("==========error==========");
@@ -373,6 +422,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
         ...currentState,
         percentage: currentState.percentage + 20
       }));
+      console.log("Withdraw receipt: ", receipt);
     })
     .on('error', (error) => {
       console.log("==========error==========");
@@ -385,13 +435,13 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
   }
 
   const resetGame = () => {
-    clearInterval(playerEventIntervalId);
-    clearInterval(dealerEventIntervalId);
-    clearInterval(gameWonIntervalId);
     setGame({
-      id: 0,
+      id: -1,
       player_cards: [],
-      dealer_cards: []
+      dealer_cards: [],
+      playerCardCount: 0,
+      dealerCardCount: 0,
+      doubleDown: false
     });
     setToasts([]);
     setWinner(currentState => ({
@@ -416,51 +466,67 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
 
   return (
     <Container>
-      <Card style={{ height: "75vh" }} className="mx-auto my-3 w-100">
+      <Card style={{ height: "75vh" }} className="my-3 w-100">
         <Card.Body>
-          <div className="d-flex align-items-start flex-column h-100">
-            <div className="mb-auto w-100 text-center">
-              {game.dealer_cards.map((value, index) => {
-                let src = "";
-                if (game.dealer_cards.length === 2 && !winner.chosen) {
-                  if (index === 1) {
-                    src=customCardBacking
+          <Container className="h-100">
+            <Row className="justify-content-center align-items-start mb-xl-3" style={winner.chosen?{height: "40%"}:{height: "50%"}}>
+              <div className="card_row">
+                {game.dealer_cards.map((value, index) => {
+                  let src = "";
+                  if (game.dealer_cards.length === 2 && !winner.chosen) {
+                    if (index === 1) {
+                      src=customCardBacking
+                    } else {
+                      src=`https://deckofcardsapi.com/static/img/${value.code}.png`
+                    }
                   } else {
                     src=`https://deckofcardsapi.com/static/img/${value.code}.png`
                   }
-                } else {
-                  src=`https://deckofcardsapi.com/static/img/${value.code}.png`
-                }
-                return <Image key={`dealer_img_${index}`} src={src} alt={`Dealer card ${index}`} fluid className="card_pictures"/>
-              })}
-            </div>
-            <div className="w-100">
-              {winner.chosen && <Alert variant="success">
-                <h4>The winner is determined to be ....... {winner.name}!</h4>
+                  return (
+                    <Image
+                      key={`dealer_card_col_${index}`}
+                      src={src}
+                      alt={`Dealer card ${index}`}
+                      className="playing_card"
+                    />
+                  )
+                })}
+              </div>
+            </Row>
+            <Row className="align-items-center">
+              {winner.chosen && <Alert variant="success" className="w-100 mb-0 text-center">
+                <h4 className="m-0">The winner is determined to be ....... {winner.name}!</h4>
               </Alert>}
-            </div>
-            <div className="mt-auto w-100 text-center">
-              {game.player_cards.map((value, index) => {
-                return <Image key={`player_img_${index}`} src={`https://deckofcardsapi.com/static/img/${value.code}.png`} alt={`Player card ${index}`} fluid className="card_pictures"/>
-              })}
-            </div>
-          </div>
-
+            </Row>
+            <Row className="justify-content-center align-items-end mt-xl-3" style={winner.chosen?{height: "40%"}:{height: "50%"}}>
+              <div className="card_row">
+                {game.player_cards.map((value, index) => {
+                  return (
+                    <Image
+                    key={`player_card_col_${index}`}
+                    src={`https://deckofcardsapi.com/static/img/${value.code}.png`}
+                    alt={`Player card ${index}`}
+                    className="playing_card"
+                  />
+                  )
+                })}
+              </div>
+            </Row>
+          </Container>
         </Card.Body>
         <Card.Footer>
           <Col>
             <Row>
-              <Col md={2}>
-                <h5>Your Balance: {(web3State.playerBalance / 10 ** 18).toFixed(4)}</h5>
-                <br/>
-                <br/>
+              <Col lg={2}>
+                <h5 className="pb-xl-5">Your Balance: {(web3State.playerBalance / 10 ** 18).toFixed(4)}</h5>
                 <h5>Dealer Balance: {(web3State.dealerBalance / 10 ** 18).toFixed(4)}</h5>
               </Col>
-              <Col>
+              <Col lg={10} className="align-self-end">
                 <GameButtons
                   newGame={newGame}
                   playerHit={playerHit}
                   playerStand={playerStand}
+                  playerDouble={playerDouble}
                   playerSurrender={playerSurrender}
                   resetGame={resetGame}
                   buttons={buttons}

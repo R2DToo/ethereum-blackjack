@@ -10,6 +10,7 @@ contract Blackjack is VRFConsumerBase {
     uint128 private lastGameId;
     mapping(uint128 => Game) public games;
     mapping(address => uint256) public pendingPayouts;
+    uint256 private totalPendingPayouts;
     address payable private admin;
 
     bytes32 internal keyHash;
@@ -31,6 +32,7 @@ contract Blackjack is VRFConsumerBase {
         mapping(uint8 => Card) dealer_cards;
         uint8 playerCardCount;
         uint8 dealerCardCount;
+        bool doubleDown;
         Player whos_turn;
         Winner winner;
     }
@@ -61,11 +63,12 @@ contract Blackjack is VRFConsumerBase {
 
     event GameWon (
         uint128 indexed game_id,
-        Winner winner
+        Winner winner,
+        uint256 payout
     );
 
     event Withdraw(
-        address admin,
+        address indexed player,
         uint256 amount
     );
 
@@ -80,19 +83,19 @@ contract Blackjack is VRFConsumerBase {
     function withdrawEth(uint256 amount) external {
         require(msg.sender == admin, "You are not the admin");
         admin.transfer(amount);
-
-        emit Withdraw(admin, amount);
     }
 
     function newGame() payable public {
         require(LINK.balanceOf(address(this)) >= (fee * 4), "Not enough LINK - fill contract with faucet");
         require(msg.value % 2 == 0, "Bet must be evenly divisible by 2");
+        require(address(this).balance > ((msg.value * 2) + (msg.value / 2)) + totalPendingPayouts, "Dealer doesn't have enough ETH");
         Game memory _newGame;
         _newGame.id = currentGameId;
         lastGameId = currentGameId;
         currentGameId = currentGameId + 1;
         _newGame.player = msg.sender;
         _newGame.bet = msg.value;
+        _newGame.doubleDown = false;
         _newGame.whos_turn = Player.Player;
         _newGame.winner = Winner.Unknown;
         _newGame.oracle_req_id = drawCardRequest(USER_SEED);
@@ -127,9 +130,9 @@ contract Blackjack is VRFConsumerBase {
             if (games[gameIndex].playerCardCount <= 2) {
                 games[gameIndex].whos_turn = Player.Dealer;
                 games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
-            } else if (getTotalHandValue(gameIndex, Player.Player) >= 21) {
+            } else if (getTotalHandValue(gameIndex, Player.Player) > 21) {
                 evaluateHands(gameIndex);
-            } else if (games[gameIndex].playerCardCount >= 11) {
+            } else if (games[gameIndex].playerCardCount >= 6 || getTotalHandValue(gameIndex, Player.Player) == 21 || games[gameIndex].doubleDown == true) {
                 if (getTotalHandValue(gameIndex, Player.Dealer) < 17) {
                     games[gameIndex].whos_turn = Player.Dealer;
                     games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
@@ -147,7 +150,7 @@ contract Blackjack is VRFConsumerBase {
             } else if (games[gameIndex].dealerCardCount == 2) {
                 games[gameIndex].whos_turn = Player.Player;
                 checkBlackjack(gameIndex);
-            } else if (games[gameIndex].dealerCardCount < 11 && getTotalHandValue(gameIndex, Player.Dealer) < 17) {
+            } else if (games[gameIndex].dealerCardCount < 6 && getTotalHandValue(gameIndex, Player.Dealer) < 17) {
                 games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
             } else {
                 evaluateHands(gameIndex);
@@ -159,7 +162,7 @@ contract Blackjack is VRFConsumerBase {
         require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
         require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
         require(games[gameIndex].playerCardCount >= 2 && games[gameIndex].dealerCardCount >= 2, "Starting cards have not been dealt yet");
-        require(games[gameIndex].playerCardCount < 11, "You have reached the card limit");
+        require(games[gameIndex].playerCardCount < 6, "You have reached the card limit");
         require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
         require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
         games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
@@ -169,7 +172,7 @@ contract Blackjack is VRFConsumerBase {
         require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
         require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
         require(games[gameIndex].playerCardCount >= 2 && games[gameIndex].dealerCardCount >= 2, "Starting cards have not been dealt yet");
-        require(games[gameIndex].playerCardCount < 11, "You have reached the card limit");
+        require(games[gameIndex].playerCardCount < 6, "You have reached the card limit");
         require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
         require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
         if (getTotalHandValue(gameIndex, Player.Dealer) < 17) {
@@ -180,11 +183,25 @@ contract Blackjack is VRFConsumerBase {
         }
     }
 
+    function playerDouble(uint128 gameIndex) external payable {
+        require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
+        require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
+        require(games[gameIndex].playerCardCount == 2 && games[gameIndex].dealerCardCount == 2, "You can only play double on your first turn");
+        require(games[gameIndex].playerCardCount < 6, "You have reached the card limit");
+        require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
+        require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
+        require(msg.value == games[gameIndex].bet, "You must send the same amount of ETH as the initial bet");
+        require(address(this).balance > (games[gameIndex].bet * 5) + totalPendingPayouts, "Dealer doesn't have enough ETH");
+        games[gameIndex].doubleDown = true;
+        games[gameIndex].bet = games[gameIndex].bet + msg.value;
+        games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+    }
+
     function playerSurrender(uint128 gameIndex) external {
         require(games[gameIndex].winner == Winner.Unknown, "The winner has already been determined");
         require(games[gameIndex].whos_turn == Player.Player, "It's not your turn");
         require(games[gameIndex].playerCardCount >= 2 && games[gameIndex].dealerCardCount >= 2, "Starting cards have not been dealt yet");
-        require(games[gameIndex].playerCardCount < 11, "You have reached the card limit");
+        require(games[gameIndex].playerCardCount < 6, "You have reached the card limit");
         require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
         require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
         setWinner(gameIndex, Winner.Dealer, 0);
@@ -212,7 +229,7 @@ contract Blackjack is VRFConsumerBase {
             for(uint8 i = 0; i < games[gameIndex].dealerCardCount; i++) {
                 handTotal = handTotal + games[gameIndex].dealer_cards[i].value;
             }
-            if (handTotal >= 17 && handTotal != 21) {
+            if (handTotal > 21) {
                 for(uint8 i = 0; i < games[gameIndex].dealerCardCount; i++) {
                     if (equals(substring(games[gameIndex].dealer_cards[i].code, 0, 1), "A")) {
                         games[gameIndex].dealer_cards[i].value = uint8(1);
@@ -234,6 +251,8 @@ contract Blackjack is VRFConsumerBase {
             setWinner(gameIndex, Winner.Tie, games[gameIndex].bet);
         } else if (playerCardValueTotal == 21) {
             setWinner(gameIndex, Winner.Player, (games[gameIndex].bet * 2) + (games[gameIndex].bet / 2));
+        } else if (dealerCardValueTotal == 21) {
+            setWinner(gameIndex, Winner.Dealer, 0);
         } else {
             games[gameIndex].winner = Winner.Unknown;
         }
@@ -265,16 +284,19 @@ contract Blackjack is VRFConsumerBase {
         games[gameIndex].winner = winner;
         games[gameIndex].payout = payout;
         if (games[gameIndex].winner == Winner.Player || games[gameIndex].winner == Winner.Tie) {
-            pendingPayouts[games[gameIndex].player] = payout;
+            pendingPayouts[games[gameIndex].player] = pendingPayouts[games[gameIndex].player] + payout;
+            totalPendingPayouts = totalPendingPayouts + payout;
         }
-        emit GameWon(games[gameIndex].id, games[gameIndex].winner);
+        emit GameWon(games[gameIndex].id, games[gameIndex].winner, games[gameIndex].payout);
     }
 
     function withdrawPayout() external {
         require(pendingPayouts[msg.sender] > 0, "There is no payout for this address");
         uint256 payAmount = pendingPayouts[msg.sender];
         pendingPayouts[msg.sender] = 0;
+        totalPendingPayouts = totalPendingPayouts - payAmount;
         msg.sender.transfer(payAmount);
+        emit Withdraw(msg.sender, payAmount);
     }
 
     function getCode(uint128 gameIndex, Player player, uint8 cardIndex) public view returns (string memory) {

@@ -14,12 +14,34 @@ code {
     monospace;
 }
 
-.card_pictures {
-  width: 11.1%;
+.card_row {
+  display: flex;
+  padding: rem;
 }
 
-.chip_pictures {
-  width: 14%;
+.playing_card {
+  height: 165px;
+  width: 120px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  transition: .2s;
+  margin: 0;
+  scroll-snap-align: start;
+  clear: both;
+  position: relative;
+}
+
+.playing_card:focus-within~.playing_card, .playing_card:hover~.playing_card {
+  transform: translateX(90px);
+}
+
+.playing_card:hover {
+  transform: translateY(-1rem);
+}
+
+.playing_card:not(:first-child) {
+  margin-left: -90px;
 }
 
 #loading_alert {
@@ -57,4 +79,10 @@ label {
   right: 20px;
   padding: 20px;
   background-color: #7b64ed;
+}
+
+@media (max-width: 576px) {
+  .chip_pictures {
+    width: 70px;
+  }
 }

@@ -17,9 +17,12 @@ const App = () => {
   const [web3Instance, setWeb3Instance] = useState("");
 
   const [game, setGame] = useState({
-    id: 0,
+    id: -1,
     player_cards: [],
-    dealer_cards: []
+    dealer_cards: [],
+    playerCardCount: 0,
+    dealerCardCount: 0,
+    doubleDown: false
   });
 
   const [toasts, setToasts] = useState([]);
@@ -37,7 +40,7 @@ const App = () => {
     mount();
   }, []);
 
-  const contract_address = '0xd8F15941B36bBf3f0D580692671B048947f10A75';
+  const contract_address = '0xd5b6bc3fb12c5c33810B39029693D84FC7E5Dc0F';
 
   const loadBlockchainData = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -63,9 +66,17 @@ const App = () => {
           dealerBalance: dealerBalance
         }));
       } else {
+        setLoading(currentState => ({
+          ...currentState,
+          status: false
+        }));
         window.alert("Please login to Metamask first");
       }
     } else {
+      setLoading(currentState => ({
+        ...currentState,
+        status: false
+      }));
       window.alert("Metamask wallet not detected. Please install and try again");
     }
     setLoading(currentState => ({

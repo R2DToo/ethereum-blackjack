@@ -19,6 +19,12 @@
 					"internalType": "enum Blackjack.Winner",
 					"name": "winner",
 					"type": "uint8"
+				},
+				{
+					"indexed": false,
+					"internalType": "uint256",
+					"name": "payout",
+					"type": "uint256"
 				}
 			],
 			"name": "GameWon",
@@ -54,13 +60,6 @@
 			],
 			"name": "NewDealerCardDealt",
 			"type": "event"
-		},
-		{
-			"inputs": [],
-			"name": "newGame",
-			"outputs": [],
-			"stateMutability": "payable",
-			"type": "function"
 		},
 		{
 			"anonymous": false,
@@ -111,6 +110,157 @@
 			],
 			"name": "NewPlayerCardDealt",
 			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": true,
+					"internalType": "address",
+					"name": "player",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "uint256",
+					"name": "amount",
+					"type": "uint256"
+				}
+			],
+			"name": "Withdraw",
+			"type": "event"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "uint128",
+					"name": "",
+					"type": "uint128"
+				}
+			],
+			"name": "games",
+			"outputs": [
+				{
+					"internalType": "uint128",
+					"name": "id",
+					"type": "uint128"
+				},
+				{
+					"internalType": "address payable",
+					"name": "player",
+					"type": "address"
+				},
+				{
+					"internalType": "uint256",
+					"name": "bet",
+					"type": "uint256"
+				},
+				{
+					"internalType": "uint256",
+					"name": "payout",
+					"type": "uint256"
+				},
+				{
+					"internalType": "bytes32",
+					"name": "oracle_req_id",
+					"type": "bytes32"
+				},
+				{
+					"internalType": "uint8",
+					"name": "playerCardCount",
+					"type": "uint8"
+				},
+				{
+					"internalType": "uint8",
+					"name": "dealerCardCount",
+					"type": "uint8"
+				},
+				{
+					"internalType": "bool",
+					"name": "doubleDown",
+					"type": "bool"
+				},
+				{
+					"internalType": "enum Blackjack.Player",
+					"name": "whos_turn",
+					"type": "uint8"
+				},
+				{
+					"internalType": "enum Blackjack.Winner",
+					"name": "winner",
+					"type": "uint8"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "uint128",
+					"name": "gameIndex",
+					"type": "uint128"
+				},
+				{
+					"internalType": "enum Blackjack.Player",
+					"name": "player",
+					"type": "uint8"
+				},
+				{
+					"internalType": "uint8",
+					"name": "cardIndex",
+					"type": "uint8"
+				}
+			],
+			"name": "getCode",
+			"outputs": [
+				{
+					"internalType": "string",
+					"name": "",
+					"type": "string"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [],
+			"name": "newGame",
+			"outputs": [],
+			"stateMutability": "payable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"name": "pendingPayouts",
+			"outputs": [
+				{
+					"internalType": "uint256",
+					"name": "",
+					"type": "uint256"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "uint128",
+					"name": "gameIndex",
+					"type": "uint128"
+				}
+			],
+			"name": "playerDouble",
+			"outputs": [],
+			"stateMutability": "payable",
+			"type": "function"
 		},
 		{
 			"inputs": [
@@ -170,25 +320,6 @@
 			"type": "function"
 		},
 		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": false,
-					"internalType": "address",
-					"name": "admin",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "uint256",
-					"name": "amount",
-					"type": "uint256"
-				}
-			],
-			"name": "Withdraw",
-			"type": "event"
-		},
-		{
 			"inputs": [
 				{
 					"internalType": "uint256",
@@ -211,113 +342,6 @@
 		{
 			"stateMutability": "payable",
 			"type": "receive"
-		},
-		{
-			"inputs": [
-				{
-					"internalType": "uint128",
-					"name": "",
-					"type": "uint128"
-				}
-			],
-			"name": "games",
-			"outputs": [
-				{
-					"internalType": "uint128",
-					"name": "id",
-					"type": "uint128"
-				},
-				{
-					"internalType": "address payable",
-					"name": "player",
-					"type": "address"
-				},
-				{
-					"internalType": "uint256",
-					"name": "bet",
-					"type": "uint256"
-				},
-				{
-					"internalType": "uint256",
-					"name": "payout",
-					"type": "uint256"
-				},
-				{
-					"internalType": "bytes32",
-					"name": "oracle_req_id",
-					"type": "bytes32"
-				},
-				{
-					"internalType": "uint8",
-					"name": "playerCardCount",
-					"type": "uint8"
-				},
-				{
-					"internalType": "uint8",
-					"name": "dealerCardCount",
-					"type": "uint8"
-				},
-				{
-					"internalType": "enum Blackjack.Player",
-					"name": "whos_turn",
-					"type": "uint8"
-				},
-				{
-					"internalType": "enum Blackjack.Winner",
-					"name": "winner",
-					"type": "uint8"
-				}
-			],
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"inputs": [
-				{
-					"internalType": "uint128",
-					"name": "gameIndex",
-					"type": "uint128"
-				},
-				{
-					"internalType": "enum Blackjack.Player",
-					"name": "player",
-					"type": "uint8"
-				},
-				{
-					"internalType": "uint8",
-					"name": "cardIndex",
-					"type": "uint8"
-				}
-			],
-			"name": "getCode",
-			"outputs": [
-				{
-					"internalType": "string",
-					"name": "",
-					"type": "string"
-				}
-			],
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"name": "pendingPayouts",
-			"outputs": [
-				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"stateMutability": "view",
-			"type": "function"
 		}
 	]
 }
