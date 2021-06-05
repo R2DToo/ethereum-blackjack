@@ -7,9 +7,7 @@ const Toasts = ({toasts, setToasts}) => {
 
   const removeToast = (index) => {
     let newToasts = [...toasts];
-    console.log("Toasts before splice: ", newToasts);
     newToasts.splice(index, 1);
-    console.log("Toasts after splice: ", newToasts);
     setToasts(newToasts);
   }
 

@@ -403,55 +403,6 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     });
   }
 
-  const withdraw = async () => {
-    setLoading(currentState => ({
-      ...currentState,
-      status: true,
-      message: "Requesting a withdraw of winnings...",
-      percentage: 20
-    }));
-    await web3State.contract.methods.withdrawPayout().send({
-      from: web3State.account
-    })
-    .once('sent', (payload) => {
-      setLoading(currentState => ({
-        ...currentState,
-        percentage: currentState.percentage + 20
-      }));
-    })
-    .once('transactionHash', (hash) => {
-      setToasts(currentState => [
-        ...currentState,
-        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
-      ]);
-      setLoading(currentState => ({
-        ...currentState,
-        percentage: currentState.percentage + 20
-      }));
-    })
-    .once('confirmation', (confirmation, receipt, latestHash) => {
-      setLoading(currentState => ({
-        ...currentState,
-        status: false
-      }));
-    })
-    .once('receipt', (receipt) => {
-      setLoading(currentState => ({
-        ...currentState,
-        percentage: currentState.percentage + 20
-      }));
-      console.log("Withdraw receipt: ", receipt);
-    })
-    .on('error', (error) => {
-      console.log("==========error==========");
-      console.log(error);
-      setLoading(currentState => ({
-        ...currentState,
-        status: false
-      }));
-    });
-  }
-
   const resetGame = () => {
     setGame({
       id: -1,
@@ -484,10 +435,23 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
 
   return (
     <Container>
-      <Card style={{ height: "75vh" }} className="my-3 w-100">
-        <Card.Body>
+      <Card className="my-3 w-100">
+        <Card.Header className={winner.chosen&&"bg-success"}>
+          <Row>
+            <Col>
+              <h5>Dealer Balance: ETH {(web3State.dealerBalance / 10 ** 18).toFixed(4)}</h5>
+            </Col>
+            <Col>
+              <h5>Your Balance: ETH {(web3State.playerBalance / 10 ** 18).toFixed(4)}</h5>
+            </Col>
+          </Row>
+          {winner.chosen && <Row><Col>
+            <h4 className="m-0 text-center">The winner is determined to be ....... {winner.name}!</h4>
+          </Col></Row>}
+        </Card.Header>
+        <Card.Body style={{minHeight:"400px", maxHeight: "400px", height: "400px"}}>
           <Container className="h-100">
-            <Row className="justify-content-center align-items-start mb-xl-3" style={{ height: "40%" }}>
+            <Row className="justify-content-center align-items-start mb-xs-3 h-50">
               <div className="card_row">
                 {game.dealer_cards.map((value, index) => {
                   let src = "";
@@ -511,21 +475,16 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
                 })}
               </div>
             </Row>
-            <Row className="align-items-center">
-              {winner.chosen && <Alert variant="success" className="w-100 mb-0 text-center">
-                <h4 className="m-0">The winner is determined to be ....... {winner.name}!</h4>
-              </Alert>}
-            </Row>
-            <Row className="justify-content-center align-items-end mt-xl-3" style={{ height: "45%" }}>
+            <Row className="justify-content-center align-items-end mt-xs-3 h-50">
               <div className="card_row">
                 {game.player_cards.map((value, index) => {
                   return (
                     <Image
-                    key={`player_card_col_${index}`}
-                    src={`https://deckofcardsapi.com/static/img/${value.code}.png`}
-                    alt={`Player card ${index}`}
-                    className="playing_card"
-                  />
+                      key={`player_card_col_${index}`}
+                      src={`https://deckofcardsapi.com/static/img/${value.code}.png`}
+                      alt={`Player card ${index}`}
+                      className="playing_card"
+                    />
                   )
                 })}
               </div>
@@ -533,26 +492,16 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
           </Container>
         </Card.Body>
         <Card.Footer>
-          <Col>
-            <Row>
-              <Col lg={2}>
-                <h5 className="pb-xl-5">Your Balance: {(web3State.playerBalance / 10 ** 18).toFixed(4)}</h5>
-                <h5>Dealer Balance: {(web3State.dealerBalance / 10 ** 18).toFixed(4)}</h5>
-              </Col>
-              <Col lg={10} className="align-self-end">
-                <GameButtons
-                  newGame={newGame}
-                  playerHit={playerHit}
-                  playerStand={playerStand}
-                  playerDouble={playerDouble}
-                  playerSurrender={playerSurrender}
-                  resetGame={resetGame}
-                  buttons={buttons}
-                  loadingStatus={loadingStatus}
-                />
-              </Col>
-            </Row>
-          </Col>
+          <GameButtons
+            newGame={newGame}
+            playerHit={playerHit}
+            playerStand={playerStand}
+            playerDouble={playerDouble}
+            playerSurrender={playerSurrender}
+            resetGame={resetGame}
+            buttons={buttons}
+            loadingStatus={loadingStatus}
+          />
         </Card.Footer>
       </Card>
       {/* <Accordion className="mt-5 w-50">
@@ -575,7 +524,6 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
           </Accordion.Collapse>
         </Card>
       </Accordion> */}
-      <Button variant="dark" size="large" id="withdraw_button" onClick={withdraw}><h4>Withdraw Winnings</h4></Button>
     </Container>
   );
 }

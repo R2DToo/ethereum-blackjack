@@ -15,45 +15,45 @@ const GameButtons = ({newGame, playerHit, playerStand, playerDouble, playerSurre
 
   return (
     <>
-      {buttons.new && <Row md={{cols:6}} xs={{cols:3}} className="justify-content-center">
-        <Col className="chip_pictures">
+      {buttons.new && <Row sm={{cols:6}} xs={{cols:3}} className="justify-content-center h-50" id="chip_row">
+        <Col className="mb-3">
           <label>
             <input type="radio" name="chip_bet" value="100000000000000" onClick={(e) => setBet(e.target.value)} defaultChecked={bet==="100000000000000"?true:false} disabled={loadingStatus?true:false}/>
-            <Image src={pokerChipTriadic0} fluid roundedCircle/>
+            <Image src={pokerChipTriadic0} roundedCircle className="chip_pictures" fluid/>
           </label>
         </Col>
-        <Col className="chip_pictures">
+        <Col className="mb-3">
           <label>
             <input type="radio" name="chip_bet" value="1000000000000000" onClick={(e) => setBet(e.target.value)} defaultChecked={bet==="1000000000000000"?true:false} disabled={loadingStatus?true:false}/>
-            <Image src={pokerChipComplementary} fluid roundedCircle/>
+            <Image src={pokerChipComplementary} roundedCircle className="chip_pictures" fluid/>
           </label>
         </Col>
-        <Col className="chip_pictures">
+        <Col className="mb-3">
           <label>
             <input type="radio" name="chip_bet" value="5000000000000000" onClick={(e) => setBet(e.target.value)} defaultChecked={bet==="5000000000000000"?true:false} disabled={loadingStatus?true:false}/>
-            <Image src={pokerChipPrimary} fluid roundedCircle/>
+            <Image src={pokerChipPrimary} roundedCircle className="chip_pictures" fluid/>
           </label>
         </Col>
-        <Col className="chip_pictures">
+        <Col className="mb-3">
           <label>
             <input type="radio" name="chip_bet" value="10000000000000000" onClick={(e) => setBet(e.target.value)} defaultChecked={bet==="10000000000000000"?true:false} disabled={loadingStatus?true:false}/>
-            <Image src={pokerChipAnalogous0} fluid roundedCircle/>
+            <Image src={pokerChipAnalogous0} roundedCircle className="chip_pictures" fluid/>
           </label>
         </Col>
-        <Col className="chip_pictures">
+        <Col className="mb-3">
           <label>
             <input type="radio" name="chip_bet" value="50000000000000000" onClick={(e) => setBet(e.target.value)} defaultChecked={bet==="50000000000000000"?true:false} disabled={loadingStatus?true:false}/>
-            <Image src={pokerChipAnalogous1} fluid roundedCircle/>
+            <Image src={pokerChipAnalogous1} roundedCircle className="chip_pictures" fluid/>
           </label>
         </Col>
-        <Col className="chip_pictures">
+        <Col className="mb-3">
           <label>
             <input type="radio" name="chip_bet" value="100000000000000000" onClick={(e) => setBet(e.target.value)} defaultChecked={bet==="100000000000000000"?true:false} disabled={loadingStatus?true:false}/>
-            <Image src={pokerChipTriadic1} fluid roundedCircle/>
+            <Image src={pokerChipTriadic1} roundedCircle className="chip_pictures" fluid/>
           </label>
         </Col>
       </Row>}
-      <Row className={buttons.new?"mt-3":""}>
+      <Row className="h-50 align-items-end" id="button_row">
         {buttons.new && <Col xs={12}><Button
           type="button"
           variant="primary"

@@ -45,7 +45,7 @@ code {
 
 #loading_alert {
   position: fixed;
-  top: 56px;
+  top: 0px;
   left: 0px;
   width: 100%;
   z-index: 10;
@@ -72,16 +72,41 @@ label {
   display: inline;
 }
 
-#withdraw_button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 20px;
-  background-color: #7b64ed;
+.chip_pictures {
+  //width: 90px;
+}
+
+#game_buttons_col {
+  //height: 185px;
+}
+
+@media (max-width: 992px) {
+  #game_buttons_col {
+    //height: 153px;
+  }
+
+  #button_row {
+    //height: 74px;
+  }
+
+  #chip_row {
+    //height: 74px;
+  }
+}
+
+@media (max-width: 768px) {
+  #account_greeting {
+    word-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .chip_pictures {
+    //width: 70px;
+  }
 }
 
 @media (max-width: 576px) {
   .chip_pictures {
-    width: 60px;
+    //width: 70px;
   }
 }

@@ -3,7 +3,7 @@ import ProgressBar from 'react-bootstrap/ProgressBar';
 
 const Loading = ({message, percentage}) => {
   return (
-    <Alert variant="info" className="text-center">
+    <Alert variant="info" className="text-center" id="loading_alert">
       <h2>{message}</h2>
       <ProgressBar now={percentage} label={`${percentage} %`} striped animated style={{ height: '20px' }}></ProgressBar>
     </Alert>

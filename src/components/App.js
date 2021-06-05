@@ -101,11 +101,61 @@ const App = () => {
     getBalance();
   }, [game, web3Instance, web3State])
 
+  const withdraw = async () => {
+    setLoading(currentState => ({
+      ...currentState,
+      status: true,
+      message: "Requesting a withdraw of winnings...",
+      percentage: 20
+    }));
+    await web3State.contract.methods.withdrawPayout().send({
+      from: web3State.account
+    })
+    .once('sent', (payload) => {
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 20
+      }));
+    })
+    .once('transactionHash', (hash) => {
+      setToasts(currentState => [
+        ...currentState,
+        {link: `https://kovan.etherscan.io/tx/${hash}`, timer: 0}
+      ]);
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 20
+      }));
+    })
+    .once('confirmation', (confirmation, receipt, latestHash) => {
+      setLoading(currentState => ({
+        ...currentState,
+        status: false
+      }));
+    })
+    .once('receipt', (receipt) => {
+      setLoading(currentState => ({
+        ...currentState,
+        percentage: currentState.percentage + 20
+      }));
+      console.log("Withdraw receipt: ", receipt);
+    })
+    .on('error', (error) => {
+      console.log("==========error==========");
+      console.log(error);
+      setLoading(currentState => ({
+        ...currentState,
+        status: false
+      }));
+    });
+  }
+
   return (
     <div className="App">
       <NavigationBar
         account={web3State.account}
         loadBlockchainData={loadBlockchainData}
+        withdraw={withdraw}
       />
       {loading.status && <Loading message={loading.message} percentage={loading.percentage} />}
       {web3State.account !== '' && <Main
