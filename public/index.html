@@ -24,5 +24,18 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script>
+      window.onbeforeunload = function (e) {
+          e = e || window.event;
+
+          // For IE and Firefox prior to version 4
+          if (e) {
+              e.returnValue = 'Your game will be lost if you leave. Are you sure?';
+          }
+
+          // For Safari
+          return 'Your game will be lost if you leave. Are you sure?';
+      };
+    </script>
   </body>
 </html>
