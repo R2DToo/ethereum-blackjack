@@ -44,9 +44,9 @@ code {
 }
 
 #loading_alert {
-  position: fixed;
+  position: -webkit-sticky;
+  position: sticky;
   top: 0px;
-  left: 0px;
   width: 100%;
   z-index: 10;
 }
@@ -72,41 +72,9 @@ label {
   display: inline;
 }
 
-.chip_pictures {
-  //width: 90px;
-}
-
-#game_buttons_col {
-  //height: 185px;
-}
-
-@media (max-width: 992px) {
-  #game_buttons_col {
-    //height: 153px;
-  }
-
-  #button_row {
-    //height: 74px;
-  }
-
-  #chip_row {
-    //height: 74px;
-  }
-}
-
 @media (max-width: 768px) {
   #account_greeting {
     word-wrap: break-word;
     word-break: break-word;
-  }
-
-  .chip_pictures {
-    //width: 70px;
-  }
-}
-
-@media (max-width: 576px) {
-  .chip_pictures {
-    //width: 70px;
   }
 }

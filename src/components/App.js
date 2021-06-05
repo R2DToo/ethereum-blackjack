@@ -154,7 +154,6 @@ const App = () => {
     <div className="App">
       <NavigationBar
         account={web3State.account}
-        loadBlockchainData={loadBlockchainData}
         withdraw={withdraw}
       />
       {loading.status && <Loading message={loading.message} percentage={loading.percentage} />}

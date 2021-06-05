@@ -1,8 +1,5 @@
 import { useState } from 'react';
 import useInterval from './useInterval';
-import Alert from 'react-bootstrap/Alert';
-import Accordion from 'react-bootstrap/Accordion';
-import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
@@ -96,7 +93,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
 
 
   const checkForPlayerCards = async () => {
-    console.log("check player cards");
+    //console.log("check player cards");
     //console.log("GAME: ", game);
     await web3State.contract.getPastEvents("NewPlayerCardDealt", {
       filter: {game_id: game.id},
@@ -116,12 +113,13 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
               }],
               playerCardCount: currentState.playerCardCount + 1
             }));
+            let total = getPlayersTotal(events);
             if (events.length <= 2) {
               setLoading(currentState => ({
                 ...currentState,
                 percentage: currentState.percentage + 20
               }));
-            } else if (game.doubleDown) {
+            } else if (game.doubleDown || total === 21) {
               setLoading(currentState => ({
                 ...currentState,
                 message: "Dealer's turn now. Waiting for their move...",
@@ -140,7 +138,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
   }
 
   const checkForDealerCards = async () => {
-    console.log("check dealer cards");
+    //console.log("check dealer cards");
     await web3State.contract.getPastEvents("NewDealerCardDealt", {
       filter: {game_id: game.id},
       fromBlock: latestBlock
@@ -433,6 +431,31 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     setButtons(newButtons);
   }
 
+  const getPlayersTotal = (events) => {
+    let total = 0;
+    let aceCount = 0;
+    console.log("Events: ", events);
+    for(let i = 0; i < events.length; i++) {
+      console.log("Value: ", parseInt(events[i].returnValues.player_card.value));
+      total += parseInt(events[i].returnValues.player_card.value);
+      let firstCodeChar = events[i].returnValues.player_card.code.substring(0, 1);
+      console.log(firstCodeChar);
+      if (firstCodeChar === "A") {
+        aceCount++;
+      }
+    }
+    console.log("Before While AceCount: ", aceCount);
+    console.log("Before While Total: ", total);
+    //If there are aces and the total will bust => convert aces from value of 11, to value of 1
+    while(total > 21 && aceCount > 0) {
+      total -= 10;
+      aceCount --;
+    }
+    console.log("AceCount: ", aceCount);
+    console.log("Total: ", total);
+    return total;
+  }
+
   return (
     <Container>
       <Card className="my-3 w-100">
@@ -504,26 +527,6 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
           />
         </Card.Footer>
       </Card>
-      {/* <Accordion className="mt-5 w-50">
-        <Card>
-          <Card.Header>
-            <Accordion.Toggle as={Button} variant="link" eventKey="0">
-              Debug Menu
-            </Accordion.Toggle>
-          </Card.Header>
-          <Accordion.Collapse eventKey="0">
-            <Card.Body>
-              <p>{game.id}</p>
-              {game.dealer_cards.map((value, index) => {
-                return <p key={`dealer_p_${index}`}>Dealer {index}: {value.code} = {value.value}</p>
-              })}
-              {game.player_cards.map((value, index) => {
-                return <p key={`player_p_${index}`}>Player {index}: {value.code} = {value.value}</p>
-              })}
-            </Card.Body>
-          </Accordion.Collapse>
-        </Card>
-      </Accordion> */}
     </Container>
   );
 }
