@@ -40,7 +40,7 @@ const App = () => {
     mount();
   }, []);
 
-  const contract_address = '0xd5b6bc3fb12c5c33810B39029693D84FC7E5Dc0F';
+  const contract_address = '0x7486CEFCD9BE24D14949bDe46f72BB0d9458Ccd7';
 
   const loadBlockchainData = async () => {
     if (typeof window.ethereum !== "undefined") {
