@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
+// Github Repository: https://github.com/R2DToo/ethereum-blackjack
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
-import "https://github.com/smartcontractkit/chainlink/blob/develop/evm-contracts/src/v0.6/VRFConsumerBase.sol";
+import "@chainlink/contracts/src/v0.6/VRFConsumerBase.sol";
 
 contract Blackjack is VRFConsumerBase {
 
@@ -15,12 +16,10 @@ contract Blackjack is VRFConsumerBase {
 
     bytes32 internal keyHash;
     uint256 internal fee;
-    address constant VRFC_ADDRESS = 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9;
-    address constant LINK_ADDRESS = 0xa36085F69e2889c224210F603D836748e7dC0088;
-    uint256 constant USER_SEED = 456513215649823187987;
+    address internal constant VRFC_ADDRESS = 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9;
+    address internal constant LINK_ADDRESS = 0xa36085F69e2889c224210F603D836748e7dC0088;
 
     string[52] private CARD_CODES = ["AH", "AD", "AC", "AS", "2H", "2D", "2C", "2S", "3H", "3D", "3C", "3S", "4H", "4D", "4C", "4S", "5H", "5D", "5C", "5S", "6H", "6D", "6C", "6S", "7H", "7D", "7C", "7S", "8H", "8D", "8C", "8S", "9H", "9D", "9C", "9S", "0H", "0D", "0C", "0S", "JH", "JD", "JC", "JS", "QH", "QD", "QC", "QS", "KH", "KD", "KC", "KS"];
-
 
     struct Game {
         uint128 id;
@@ -72,6 +71,13 @@ contract Blackjack is VRFConsumerBase {
         uint256 amount
     );
 
+    event VRFResponse(
+        uint128 indexed game_id,
+        bytes32 request_id,
+        uint256 random_response,
+        Player whos_turn
+    );
+
     constructor() VRFConsumerBase(VRFC_ADDRESS, LINK_ADDRESS) public {
         keyHash = 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
         fee = 0.1 * 10 ** 18; // 0.1 LINK
@@ -82,7 +88,17 @@ contract Blackjack is VRFConsumerBase {
 
     function withdrawEth(uint256 amount) external {
         require(msg.sender == admin, "You are not the admin");
+        require(amount <= address(this).balance - totalPendingPayouts, "There are not enough available funds");
         admin.transfer(amount);
+    }
+
+    function withdrawPayout() external {
+        require(pendingPayouts[msg.sender] > 0, "There is no payout for this address");
+        uint256 payAmount = pendingPayouts[msg.sender];
+        pendingPayouts[msg.sender] = 0;
+        totalPendingPayouts = totalPendingPayouts - payAmount;
+        msg.sender.transfer(payAmount);
+        emit Withdraw(msg.sender, payAmount);
     }
 
     function newGame() payable public {
@@ -98,23 +114,23 @@ contract Blackjack is VRFConsumerBase {
         _newGame.doubleDown = false;
         _newGame.whos_turn = Player.Player;
         _newGame.winner = Winner.Unknown;
-        _newGame.oracle_req_id = drawCardRequest(USER_SEED);
-
+        _newGame.oracle_req_id = drawCardRequest();
         emit NewGame(_newGame.id, _newGame.player);
-
         games[lastGameId] = _newGame;
     }
 
-    function drawCardRequest(uint256 userProvidedSeed) internal returns (bytes32) {
-        return requestRandomness(keyHash, fee, userProvidedSeed);
+    function drawCardRequest() internal returns (bytes32) {
+        return requestRandomness(keyHash, fee, block.number);
     }
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
         if (games[lastGameId].oracle_req_id == requestId) {
+            emit VRFResponse(lastGameId, requestId, randomness, games[lastGameId].whos_turn);
             addCardToHand(lastGameId, CARD_CODES[randomness.mod(52)]);
         } else {
             for (uint128 i = 0; i < currentGameId; i++) {
                 if (games[i].oracle_req_id == requestId) {
+                    emit VRFResponse(i, requestId, randomness, games[i].whos_turn);
                     addCardToHand(i, CARD_CODES[randomness.mod(52)]);
                 }
             }
@@ -129,13 +145,13 @@ contract Blackjack is VRFConsumerBase {
             games[gameIndex].playerCardCount = games[gameIndex].playerCardCount + 1;
             if (games[gameIndex].playerCardCount <= 2) {
                 games[gameIndex].whos_turn = Player.Dealer;
-                games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+                games[gameIndex].oracle_req_id = drawCardRequest();
             } else if (getTotalHandValue(gameIndex, Player.Player) > 21) {
                 evaluateHands(gameIndex);
             } else if (games[gameIndex].playerCardCount >= 6 || getTotalHandValue(gameIndex, Player.Player) == 21 || games[gameIndex].doubleDown == true) {
                 if (getTotalHandValue(gameIndex, Player.Dealer) < 17) {
                     games[gameIndex].whos_turn = Player.Dealer;
-                    games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+                    games[gameIndex].oracle_req_id = drawCardRequest();
                 } else {
                     evaluateHands(gameIndex);
                 }
@@ -146,12 +162,12 @@ contract Blackjack is VRFConsumerBase {
             games[gameIndex].dealerCardCount = games[gameIndex].dealerCardCount + 1;
             if (games[gameIndex].dealerCardCount < 2) {
                 games[gameIndex].whos_turn = Player.Player;
-                games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+                games[gameIndex].oracle_req_id = drawCardRequest();
             } else if (games[gameIndex].dealerCardCount == 2) {
                 games[gameIndex].whos_turn = Player.Player;
                 checkBlackjack(gameIndex);
             } else if (games[gameIndex].dealerCardCount < 6 && getTotalHandValue(gameIndex, Player.Dealer) < 17) {
-                games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+                games[gameIndex].oracle_req_id = drawCardRequest();
             } else {
                 evaluateHands(gameIndex);
             }
@@ -165,7 +181,7 @@ contract Blackjack is VRFConsumerBase {
         require(games[gameIndex].playerCardCount < 6, "You have reached the card limit");
         require(getTotalHandValue(gameIndex, Player.Player) != 21, "You already have blackjack");
         require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
-        games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+        games[gameIndex].oracle_req_id = drawCardRequest();
     }
 
     function playerStand(uint128 gameIndex) external {
@@ -177,7 +193,7 @@ contract Blackjack is VRFConsumerBase {
         require(getTotalHandValue(gameIndex, Player.Player) < 21, "You have bust");
         if (getTotalHandValue(gameIndex, Player.Dealer) < 17) {
             games[gameIndex].whos_turn = Player.Dealer;
-            games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+            games[gameIndex].oracle_req_id = drawCardRequest();
         } else {
             evaluateHands(gameIndex);
         }
@@ -194,7 +210,7 @@ contract Blackjack is VRFConsumerBase {
         require(address(this).balance > (games[gameIndex].bet * 5) + totalPendingPayouts, "Dealer doesn't have enough ETH");
         games[gameIndex].doubleDown = true;
         games[gameIndex].bet = games[gameIndex].bet + msg.value;
-        games[gameIndex].oracle_req_id = drawCardRequest(USER_SEED);
+        games[gameIndex].oracle_req_id = drawCardRequest();
     }
 
     function playerSurrender(uint128 gameIndex) external {
@@ -290,23 +306,6 @@ contract Blackjack is VRFConsumerBase {
         emit GameWon(games[gameIndex].id, games[gameIndex].winner, games[gameIndex].payout);
     }
 
-    function withdrawPayout() external {
-        require(pendingPayouts[msg.sender] > 0, "There is no payout for this address");
-        uint256 payAmount = pendingPayouts[msg.sender];
-        pendingPayouts[msg.sender] = 0;
-        totalPendingPayouts = totalPendingPayouts - payAmount;
-        msg.sender.transfer(payAmount);
-        emit Withdraw(msg.sender, payAmount);
-    }
-
-    function getCode(uint128 gameIndex, Player player, uint8 cardIndex) public view returns (string memory) {
-        if (player == Player.Player) {
-            return games[gameIndex].player_cards[cardIndex].code;
-        } else if (player == Player.Dealer) {
-            return games[gameIndex].dealer_cards[cardIndex].code;
-        }
-    }
-
     function valueStringToValueUint(string memory _value) internal pure returns (uint8) {
         if (equals(_value, "J") || equals(_value, "Q") || equals(_value, "K") || equals(_value, "0")) {
             _value = "10";
@@ -333,7 +332,6 @@ contract Blackjack is VRFConsumerBase {
         if (tempEmptyStringTest.length == 0) {
             return 0x0;
         }
-
         assembly { // solhint-disable-line no-inline-assembly
             result := mload(add(source, 32))
         }
