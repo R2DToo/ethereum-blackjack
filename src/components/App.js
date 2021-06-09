@@ -87,16 +87,18 @@ const App = () => {
 
   useEffect(() => {
     const getBalance = async () => {
-      if (web3State.account !== "") {
-        const accounts = await web3Instance.eth.getAccounts();
-        const playerBalance = await web3Instance.eth.getBalance(accounts[0]);
-        const dealerBalance = await web3Instance.eth.getBalance(contract_address);
-        setWeb3State(currentState => ({
-          ...currentState,
-          playerBalance: playerBalance,
-          dealerBalance: dealerBalance
-        }));
-      }
+      try {
+        if (web3State.account !== "") {
+          const accounts = await web3Instance.eth.getAccounts();
+          const playerBalance = await web3Instance.eth.getBalance(accounts[0]);
+          const dealerBalance = await web3Instance.eth.getBalance(contract_address);
+          setWeb3State(currentState => ({
+            ...currentState,
+            playerBalance: playerBalance,
+            dealerBalance: dealerBalance
+          }));
+        }
+      } catch {}
     };
     getBalance();
   }, [game, web3Instance, web3State])
@@ -141,7 +143,7 @@ const App = () => {
       console.log("Withdraw receipt: ", receipt);
     })
     .on('error', (error) => {
-      console.log("==========error==========");
+      console.log("ERROR with Withdraw transaction. See below");
       console.log(error);
       setLoading(currentState => ({
         ...currentState,

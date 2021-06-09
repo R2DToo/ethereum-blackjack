@@ -84,7 +84,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }
     })
     .on('error', (error) => {
-      console.log("==========error==========");
+      console.log("ERROR with New Game transaction. See below");
       console.log(error);
       setLoading(currentState => ({
         ...currentState,
@@ -102,6 +102,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     },
       (error, events) => {
         if (error) {
+          console.log("ERROR while checking for player cards. See below");
           console.log(error);
         } else if (events) {
           if (events.length > game.playerCardCount) {
@@ -144,6 +145,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     },
       (error, events) => {
         if (error) {
+          console.log("ERROR while checking for dealer cards. See below");
           console.log(error);
         } else if (events) {
           if (events.length > game.dealerCardCount) {
@@ -185,6 +187,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
     },
       (error, events) => {
         if (error) {
+          console.log("ERROR while checking for the game win event. See below");
           console.log(error);
         } else if (typeof events[0] !== "undefined") {
           let message = "";
@@ -268,7 +271,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }
     })
     .on('error', (error) => {
-      console.log("==========error==========");
+      console.log("ERROR with Hit transaction. See below");
       console.log(error);
       setLoading(currentState => ({
         ...currentState,
@@ -312,7 +315,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }
     })
     .on('error', (error) => {
-      console.log("==========error==========");
+      console.log("ERROR with Stand transaction. See below");
       console.log(error);
       setLoading(currentState => ({
         ...currentState,
@@ -368,7 +371,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }
     })
     .on('error', (error) => {
-      console.log("==========error==========");
+      console.log("ERROR with Double transaction. See below");
       console.log(error);
       setLoading(currentState => ({
         ...currentState,
@@ -416,7 +419,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
       }));
     })
     .on('error', (error) => {
-      console.log("==========error==========");
+      console.log("ERROR with Surrender transaction. See below");
       console.log(error);
       setLoading(currentState => ({
         ...currentState,
@@ -448,7 +451,7 @@ const Main = ({ web3State, loadingStatus, setLoading, setToasts, game, setGame }
 
     })
     .on('error', (error) => {
-      console.log("==========error==========");
+      console.log("ERROR with Admin Withdraw transaction. See below");
       console.log(error);
       setLoading(currentState => ({
         ...currentState,
