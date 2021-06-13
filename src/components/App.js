@@ -42,7 +42,6 @@ const App = () => {
   useEffect(() => {
     const tryConnect = async () => {
       connectToProvider();
-      //await loadBlockchainData();
     };
     tryConnect();
   }, []);
@@ -104,54 +103,19 @@ const App = () => {
         dealerBalance: dealerBalance
       }));
     } else {
-      setLoading(currentState => ({
-        ...currentState,
-        status: false
-      }));
       window.alert("Please login to Metamask first");
-    }
-  }
-
-  const loadBlockchainData = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      const web3 = new Web3(window.ethereum);
-      setWeb3Instance(web3);
-      await web3.eth.requestAccounts();
-      const networkId = await web3.eth.net.getId();
-      if(networkId!==42){
-        window.alert('Please switch network to Kovan and refresh the page');
-      }
-      const contract_abi = BlackJackABI.abi;
-
-      const contract = new web3.eth.Contract(contract_abi, contract_address);
-      const accounts = await web3.eth.getAccounts();
-      if (typeof accounts[0] !== "undefined") {
-        const playerBalance = await web3.eth.getBalance(accounts[0]);
-        const dealerBalance = await web3.eth.getBalance(contract_address);
-        setWeb3State(currentState => ({
-          ...currentState,
-          contract: contract,
-          account: accounts[0],
-          playerBalance: playerBalance,
-          dealerBalance: dealerBalance
-        }));
-      } else {
-        setLoading(currentState => ({
-          ...currentState,
-          status: false
-        }));
-        window.alert("Please login to Metamask first");
-      }
-    } else {
-      setLoading(currentState => ({
-        ...currentState,
-        status: false
-      }));
-      window.alert("Metamask wallet not detected. Please install and try again");
     }
     setLoading(currentState => ({
       ...currentState,
       status: false
+    }));
+  }
+
+  const logout = () => {
+    setWeb3State(currentState => ({
+      ...currentState,
+      contract: '',
+      account: '',
     }));
   }
 
@@ -223,11 +187,12 @@ const App = () => {
   }
 
   return (
-    <div className="App">
+    <div className="App vh-100">
       <NavigationBar
         account={web3State.account}
         withdraw={withdraw}
         connect={connectToProvider}
+        logout={logout}
       />
       {loading.status && <Loading message={loading.message} percentage={loading.percentage} />}
       {web3State.account !== '' && <Main

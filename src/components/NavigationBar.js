@@ -4,11 +4,16 @@ import Modal from 'react-bootstrap/Modal';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 
-const NavigationBar = ({account, withdraw, connect}) => {
-  const [showModal, setShowModal] = useState(false);
+const NavigationBar = ({account, withdraw, connect, logout}) => {
+  const [informationModal, setInformationModal] = useState(false);
 
-  const handleShow = () => setShowModal(true);
-  const handleClose = () => setShowModal(false);
+  const showInformationModal = () => setInformationModal(true);
+  const closeInformationModal = () => setInformationModal(false);
+
+  const [walletModal, setWalletModal] = useState(false);
+
+  const showWalletModal = () => setWalletModal(true);
+  const closeWalletModal = () => setWalletModal(false);
 
   return (
     <>
@@ -21,16 +26,30 @@ const NavigationBar = ({account, withdraw, connect}) => {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="responsive-navbar" style={{backgroundColor: "theme-color('primary')"}}/>
         <Navbar.Collapse id="responsive-navbar" className="justify-content-end">
-          <Button className="nav-link my-1 mr-1" onClick={handleShow}>Rules/Information</Button>
-          {account && <Button className="nav-link my-1 mr-1" onClick={withdraw} style={{backgroundColor: "#7b64ed"}} variant="dark">🎉 Withdraw Winnings 💲</Button>}
-          {account ? <Navbar.Text>
-            <p id="account_greeting">Hello, {account}</p>
-          </Navbar.Text>:<Button className="nav-link my-1 mr-1" onClick={connect}>
+          <Button className="nav-link my-1 mr-1 rounded-pill" onClick={showInformationModal}>Rules/Information</Button>
+          {account && <Button className="nav-link my-1 mr-1 rounded-pill" onClick={withdraw} style={{backgroundColor: "#7b64ed"}} variant="dark">🎉 Withdraw Winnings 💲</Button>}
+          {account ? <Button variant="secondary" className="nav-link my-1 mr-1 rounded-pill" onClick={showWalletModal}>
+            {account.substring(0, 4)}...{account.substring(account.length-4, account.length)}
+          </Button>:<Button className="nav-link my-1 mr-1 rounded-pill" onClick={connect}>
             Connect to Wallet
           </Button>}
         </Navbar.Collapse>
       </Navbar>
-      <Modal show={showModal} onHide={handleClose} size="lg">
+      <Modal show={walletModal} onHide={closeWalletModal}>
+        <Modal.Header closeButton>
+          Your Wallet
+        </Modal.Header>
+        <Modal.Body>
+          <h4 className="myWordBreak">{account}</h4>
+        </Modal.Body>
+        <Modal.Footer className="justify-content-center">
+          <Button onClick={() => {
+            closeWalletModal();
+            logout();
+          }}>Logout</Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal show={informationModal} onHide={closeInformationModal} size="lg">
         <Modal.Header closeButton>
           <Nav variant="pills" defaultActiveKey="information">
             <Nav.Item>
