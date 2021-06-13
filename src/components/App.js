@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
 import Web3 from 'web3';
+import Web3Modal from 'web3modal';
+import Authereum from "authereum";
+import Fortmatic from "fortmatic";
+import Portis from "@portis/web3";
+import Torus from "@toruslabs/torus-embed";
+import WalletConnectProvider from "@walletconnect/web3-provider";
 import NavigationBar from './NavigationBar';
 import Main from './Main';
 import Loading from './Loading';
@@ -28,19 +34,83 @@ const App = () => {
   const [toasts, setToasts] = useState([]);
 
   const [loading, setLoading] = useState({
-    status: true,
+    status: false,
     message: "Connecting to your Metamask Wallet...",
     percentage: 50
   });
 
   useEffect(() => {
-    const mount = async () => {
-      await loadBlockchainData();
+    const tryConnect = async () => {
+      connectToProvider();
+      //await loadBlockchainData();
     };
-    mount();
+    tryConnect();
   }, []);
 
   const contract_address = '0x7486CEFCD9BE24D14949bDe46f72BB0d9458Ccd7';
+
+  const connectToProvider = async () => {
+    const providerOptions = {
+      walletconnect: {
+        package: WalletConnectProvider, // required
+        options: {
+          infuraId: "INFURA_ID" // required
+        }
+      },
+      authereum: {
+        package: Authereum // required
+      },
+      fortmatic: {
+        package: Fortmatic, // required
+        options: {
+          key: "pk_test_7F6ED4CD12FEACF3" // required - https://dashboard.fortmatic.com/
+        }
+      },
+      torus: {
+        package: Torus // required
+      },
+      portis: {
+        package: Portis, // required
+        options: {
+          id: "ee5461c7-5dc9-4a83-b9df-54bc98cd5580" // required - https://dashboard.portis.io/
+        }
+      }
+    };
+    const web3Modal = new Web3Modal({
+      network: "kovan",
+      providerOptions
+    });
+    const provider = await web3Modal.connect();
+
+    const web3 = new Web3(provider);
+    setWeb3Instance(web3);
+    await web3.eth.requestAccounts();
+    const networkId = await web3.eth.net.getId();
+    if(networkId!==42){
+      window.alert('Please switch network to Kovan and refresh the page');
+    }
+    const contract_abi = BlackJackABI.abi;
+
+    const contract = new web3.eth.Contract(contract_abi, contract_address);
+    const accounts = await web3.eth.getAccounts();
+    if (typeof accounts[0] !== "undefined") {
+      const playerBalance = await web3.eth.getBalance(accounts[0]);
+      const dealerBalance = await web3.eth.getBalance(contract_address);
+      setWeb3State(currentState => ({
+        ...currentState,
+        contract: contract,
+        account: accounts[0],
+        playerBalance: playerBalance,
+        dealerBalance: dealerBalance
+      }));
+    } else {
+      setLoading(currentState => ({
+        ...currentState,
+        status: false
+      }));
+      window.alert("Please login to Metamask first");
+    }
+  }
 
   const loadBlockchainData = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -157,6 +227,7 @@ const App = () => {
       <NavigationBar
         account={web3State.account}
         withdraw={withdraw}
+        connect={connectToProvider}
       />
       {loading.status && <Loading message={loading.message} percentage={loading.percentage} />}
       {web3State.account !== '' && <Main

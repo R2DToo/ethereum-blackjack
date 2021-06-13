@@ -4,7 +4,7 @@ import Modal from 'react-bootstrap/Modal';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 
-const NavigationBar = ({account, withdraw}) => {
+const NavigationBar = ({account, withdraw, connect}) => {
   const [showModal, setShowModal] = useState(false);
 
   const handleShow = () => setShowModal(true);
@@ -23,9 +23,11 @@ const NavigationBar = ({account, withdraw}) => {
         <Navbar.Collapse id="responsive-navbar" className="justify-content-end">
           <Button className="nav-link my-1 mr-1" onClick={handleShow}>Rules/Information</Button>
           {account && <Button className="nav-link my-1 mr-1" onClick={withdraw} style={{backgroundColor: "#7b64ed"}} variant="dark">🎉 Withdraw Winnings 💲</Button>}
-          {account && <Navbar.Text>
+          {account ? <Navbar.Text>
             <p id="account_greeting">Hello, {account}</p>
-          </Navbar.Text>}
+          </Navbar.Text>:<Button className="nav-link my-1 mr-1" onClick={connect}>
+            Connect to Wallet
+          </Button>}
         </Navbar.Collapse>
       </Navbar>
       <Modal show={showModal} onHide={handleClose} size="lg">
